@@ -19,12 +19,17 @@ async def read_root():
                         <select class="action" name="actions" required onchange="toggleSelectorInput(this)">
                             <option value="">Select an action</option>
                             <option value="click">Click on Button</option>
-                            <option value="read">Read Text</option>
+                            <option value="read">Read Text from Element</option>
+                            <option value="type">Type into Input Field</option>
                             <option value="done">Done!</option>
                         </select><br><br>
                         <div class="selectorInput" style="display: none;">
-                            <label for="selector">Enter the object id for the action(optional):</label>
+                            <label for="selector">Enter the object HTML signature (optional):</label>
                             <input type="text" class="selector" name="selectors"><br><br>
+                            <div class="typeInput" style="display: none;">
+                                <label for="text">Enter the text to type:</label>
+                                <input type="text" class="text" name="texts"><br><br>
+                            </div>
                         </div>
                     `;
                     document.getElementById('actionsContainer').appendChild(actionDiv);
@@ -33,8 +38,14 @@ async def read_root():
                 function toggleSelectorInput(selectElement) {
                     var action = selectElement.value;
                     var selectorInput = selectElement.parentElement.querySelector('.selectorInput');
-                    if (action === 'click' || action === 'read') {
+                    var typeInput = selectElement.parentElement.querySelector('.typeInput');
+                    if (action === 'click' || action === 'read' || action === 'type') {
                         selectorInput.style.display = 'block';
+                        if (action === 'type') {
+                            typeInput.style.display = 'block';
+                        } else {
+                            typeInput.style.display = 'none';
+                        }
                         addAction();
                     } else if (action === 'done') {
                         document.getElementById('submitBtn').style.display = 'block';
@@ -64,19 +75,22 @@ async def read_root():
     return HTMLResponse(content=html_content)
 
 @app.post("/result", response_class=HTMLResponse)
-async def submit_url(url: str = Form(...), actions: list[str] = Form(...), selectors: list[str] = Form(None)):
+async def submit_url(url: str = Form(...), actions: list[str] = Form(...), selectors: list[str] = Form(None), texts: list[str] = Form(None)):
     try:
-        r.init(turbo_mode=True)
+        r.init(turbo_mode=True, headless_mode=False)
         r.url(url)
         action_messages = []
 
-        for action, selector in zip(actions, selectors):
+        for action, selector, text in zip(actions, selectors, texts):
             if action == "click" and selector:
                 r.click(selector)
                 action_messages.append(f"Clicked on button ID: {selector}")
             elif action == "read" and selector:
                 read_text = r.read(selector)
                 action_messages.append(f"Read text from ID {selector}: {read_text}")
+            elif action == "type" and selector and text:
+                r.type(selector, text)
+                action_messages.append(f"Typed text into ID {selector}: {text}")
             elif action == "done":
                 break
             elif not selector:
