@@ -10,6 +10,44 @@ async def read_root():
     <html>
         <head>
             <title>Welcome Page</title>
+            <script>
+                function addAction() {
+                    var actionDiv = document.createElement('div');
+                    actionDiv.classList.add('action-group');
+                    actionDiv.innerHTML = `
+                        <label for="action">Choose an action:</label>
+                        <select class="action" name="actions" required onchange="toggleSelectorInput(this)">
+                            <option value="">Select an action</option>
+                            <option value="click">Click on Button</option>
+                            <option value="read">Read Text</option>
+                            <option value="done">Done!</option>
+                        </select><br><br>
+                        <div class="selectorInput" style="display: none;">
+                            <label for="selector">Enter the object id for the action(optional):</label>
+                            <input type="text" class="selector" name="selectors"><br><br>
+                        </div>
+                    `;
+                    document.getElementById('actionsContainer').appendChild(actionDiv);
+                }
+
+                function toggleSelectorInput(selectElement) {
+                    var action = selectElement.value;
+                    var selectorInput = selectElement.parentElement.querySelector('.selectorInput');
+                    if (action === 'click' || action === 'read') {
+                        selectorInput.style.display = 'block';
+                        addAction();
+                    } else if (action === 'done') {
+                        document.getElementById('submitBtn').style.display = 'block';
+                    } else {
+                        selectorInput.style.display = 'none';
+                    }
+                }
+
+                window.onload = function() {
+                    addAction();
+                    document.getElementById('submitBtn').style.display = 'none';
+                }
+            </script>
         </head>
         <body>
             <h1>Welcome to My FastAPI Application</h1>
@@ -17,11 +55,8 @@ async def read_root():
             <form action="/result" method="post">
                 <label for="url">Enter a website URL:</label>
                 <input type="text" id="url" name="url" required><br><br>
-                <label for="button_id">Enter the button_id you want to right click (optional):</label>
-                <input type="text" id="button_id" name="button_id"><br><br>
-                <label for="read_id">Enter the object id to read text from (optional):</label>
-                <input type="text" id="read_id" name="read_id"><br><br>
-                <button type="submit">Submit</button>
+                <div id="actionsContainer"></div>
+                <button type="submit" id="submitBtn">Submit</button>
             </form>
         </body>
     </html>
@@ -29,20 +64,23 @@ async def read_root():
     return HTMLResponse(content=html_content)
 
 @app.post("/result", response_class=HTMLResponse)
-async def submit_url(url: str = Form(...), button_id: str = Form(None), read_id: str = Form(None)):
+async def submit_url(url: str = Form(...), actions: list[str] = Form(...), selectors: list[str] = Form(None)):
     try:
-        r.init(turbo_mode=True, headless_mode=False)
+        r.init(turbo_mode=True)
         r.url(url)
-        click_message = "No button ID provided."
-        read_message = "No read ID provided."
+        action_messages = []
 
-        if button_id:
-            r.click(button_id)
-            click_message = f"Right-clicked on button ID: {button_id}"
-
-        if read_id:
-            read_text = r.read(read_id)
-            read_message = f"Read text from ID {read_id}: {read_text}"
+        for action, selector in zip(actions, selectors):
+            if action == "click" and selector:
+                r.click(selector)
+                action_messages.append(f"Clicked on button ID: {selector}")
+            elif action == "read" and selector:
+                read_text = r.read(selector)
+                action_messages.append(f"Read text from ID {selector}: {read_text}")
+            elif action == "done":
+                break
+            elif not selector:
+                action_messages.append("No selector provided for the chosen action.")
 
         html_content = f"""
         <html>
@@ -52,8 +90,8 @@ async def submit_url(url: str = Form(...), button_id: str = Form(None), read_id:
             <body>
                 <h1>URL Submitted</h1>
                 <p>You submitted the following URL: {url}</p>
-                <p>{click_message}</p>
-                <p>{read_message}</p>
+                {"".join(f"<p>{msg}</p>" for msg in action_messages)}
+                <a href="/">Perform another action</a>
             </body>
         </html>
         """
@@ -67,6 +105,7 @@ async def submit_url(url: str = Form(...), button_id: str = Form(None), read_id:
                 <h1>Error</h1>
                 <p>There was an error processing the URL: {url}</p>
                 <p>Error details: {str(e)}</p>
+                <a href="/">Perform another action</a>
             </body>
         </html>
         """
