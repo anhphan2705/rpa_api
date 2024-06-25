@@ -35,6 +35,7 @@ async def read_root():
                             <option value="">Select an action</option>
                             <option value="url">Connect to URL</option>
                             <option value="click">Click on Button</option>
+                            <option value="rclick">Right Click an Element</option>
                             <option value="read">Read Text from Element</option>
                             <option value="type">Type into Input Field</option>
                             <option value="snap">Snap Screenshot</option>
@@ -81,7 +82,7 @@ async def read_root():
                     var loopInput = selectElement.parentElement.querySelector('.loopInput');
 
                     // Show or hide input fields based on the selected action
-                    if (action === 'url' || action === 'click' || action === 'read' || action === 'type' || action === 'select') {
+                    if (action === 'url' || action === 'click' || action === 'rclick' || action === 'read' || action === 'type' || action === 'select') {
                         selectorInput.style.display = 'block';
                         excelInput.style.display = 'none';
                         loopInput.style.display = 'none';
@@ -216,6 +217,9 @@ async def submit_url(
             elif action == "click" and selector:
                 r.click(selector)
                 return f"Clicked on button ID: {selector}"
+            elif action == "rclick" and selector:
+                r.rclick(selector)
+                return f"Right-clicked on element ID: {selector}"
             elif action == "read" and selector:
                 read_text = r.read(selector)
                 return f"Read text from ID {selector}: {read_text}"
