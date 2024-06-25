@@ -8,10 +8,8 @@ import uuid
 
 app = FastAPI()
 
-# Ensure the 'screenshots' directory exists
 os.makedirs('screenshots', exist_ok=True)
 
-# Serve the static files in the 'screenshots' directory
 app.mount("/screenshots", StaticFiles(directory="screenshots"), name="screenshots")
 
 @app.get("/", response_class=HTMLResponse)
@@ -19,7 +17,7 @@ async def read_root():
     html_content = """
     <html>
         <head>
-            <title>Welcome Page</title>
+            <title>Simple RPA UI</title>
             <script>
                 var loopCounter = 0;
                 var inLoop = false;
@@ -85,7 +83,7 @@ async def read_root():
                         if (action === 'url') {
                             selectorLabel.textContent = 'Enter URL:';
                         } else {
-                            selectorLabel.textContent = 'Enter the object HTML signature (optional):';
+                            selectorLabel.textContent = 'Enter the element identifier (optional):';
                         }
                         if (action === 'type') {
                             typeInput.style.display = 'block';
@@ -151,7 +149,7 @@ async def read_root():
                     })
                     .then(response => response.json())
                     .then(data => {
-                        document.getElementById('excelResult').innerHTML = `Rows: ${data.rows}, Columns: ${data.columns}`;
+                        document.getElementById('excelResult').innerHTML = `Rows: ${data.rows}, Columns: ${data.columns}<br><pre>${data.data}</pre>`;
                     })
                     .catch(error => {
                         console.error("Error uploading Excel file:", error);
@@ -166,11 +164,9 @@ async def read_root():
             </script>
         </head>
         <body>
-            <h1>Welcome to My FastAPI Application</h1>
-            <p>This is a simple welcome page.</p>
+            <h1>Welcome to Simple FastAPI Application</h1>
+            <p>This is simplified process planner.</p>
             <form action="/result" method="post" enctype="multipart/form-data">
-                <label for="url">Enter a website URL:</label>
-                <input type="text" id="url" name="url" required><br><br>
                 <div id="actionsContainer"></div>
                 <button type="submit" id="submitBtn">Submit</button>
             </form>
@@ -184,13 +180,13 @@ async def upload_excel(file: UploadFile = File(...)):
     try:
         df = pd.read_excel(file.file)
         rows, columns = df.shape
-        return JSONResponse(content={"rows": rows, "columns": columns})
+        data = df.to_dict(orient='records')
+        return JSONResponse(content={"rows": rows, "columns": columns, "data": data})
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
 
 @app.post("/result", response_class=HTMLResponse)
 async def submit_url(
-    url: str = Form(...),
     actions: list[str] = Form(...),
     selectors: list[str] = Form(None),
     texts: list[str] = Form(None),
@@ -199,8 +195,7 @@ async def submit_url(
     excel_files: list[UploadFile] = Form(None)
 ):
     try:
-        r.init(turbo_mode=False, headless_mode=False)
-        r.url(url)
+        r.init(turbo_mode=True, headless_mode=False)
         action_messages = []
         screenshots = []
 
@@ -276,11 +271,10 @@ async def submit_url(
         html_content = f"""
         <html>
             <head>
-                <title>URL Submitted</title>
+                <title>Actions Executed</title>
             </head>
             <body>
-                <h1>URL Submitted</h1>
-                <p>You submitted the following URL: {url}</p>
+                <h1>Actions Executed</h1>
                 {"".join(f"<p>{msg}</p>" for msg in action_messages if not msg.startswith('Executed loop'))}
                 <p>{', '.join([msg for msg in action_messages if msg.startswith('Executed loop')])}</p>
                 <a href="/">Perform another action</a><br>
@@ -296,7 +290,7 @@ async def submit_url(
             </head>
             <body>
                 <h1>Error</h1>
-                <p>There was an error processing the URL: {url}</p>
+                <p>There was an error processing the actions.</p>
                 <p>Error details: {str(e)}</p>
                 <a href="/">Perform another action</a>
             </body>
