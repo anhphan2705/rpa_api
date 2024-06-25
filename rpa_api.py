@@ -171,7 +171,7 @@ async def read_root():
             </script>
         </head>
         <body>
-            <h1>Welcome to Simple FastAPI Application</h1>
+            <h1>Welcome to Simple RPA UI</h1>
             <p>This is a simplified process planner for your RPA.</p>
             <form action="/result" method="post" enctype="multipart/form-data">
                 <div id="actionsContainer"></div>
