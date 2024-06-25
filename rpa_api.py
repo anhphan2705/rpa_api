@@ -78,7 +78,7 @@ async def read_root():
                         selectorInput.style.display = 'none';
                         loopInput.style.display = 'block';
                         // After entering loop times, re-show action selection
-                        addAction(indentLevel + 1);
+                        addAction(indentLevel);
                     } else if (action === 'exit_loop') {
                         selectorInput.style.display = 'none';
                         loopInput.style.display = 'none';
@@ -117,8 +117,6 @@ async def read_root():
     """
     return HTMLResponse(content=html_content)
 
-### Backend (Python + FastAPI):
-
 @app.post("/result", response_class=HTMLResponse)
 async def submit_url(
     url: str = Form(...),
@@ -135,25 +133,25 @@ async def submit_url(
         def execute_action(action, selector, text):
             if action == "url" and selector:
                 r.url(selector)
-                action_messages.append(f"Connected to URL: {selector}")
+                return f"Connected to URL: {selector}"
             elif action == "click" and selector:
                 r.click(selector)
-                action_messages.append(f"Clicked on button ID: {selector}")
+                return f"Clicked on button ID: {selector}"
             elif action == "read" and selector:
                 read_text = r.read(selector)
-                action_messages.append(f"Read text from ID {selector}: {read_text}")
+                return f"Read text from ID {selector}: {read_text}"
             elif action == "type" and selector and text:
                 r.type(selector, text)
-                action_messages.append(f"Typed text into ID {selector}: {text}")
+                return f"Typed text into ID {selector}: {text}"
 
         i = 0
         while i < len(actions):
             action = actions[i]
             selector = selectors[i] if i < len(selectors) else None
             text = texts[i] if i < len(texts) else None
-            loop_count = loop_counts[i] if i < len(loop_counts) else None
+            loop_count = int(loop_counts[i]) if i < len(loop_counts) and loop_counts[i].isdigit() else 1
 
-            if action == "loop_times" and loop_count:
+            if action == "loop_times":
                 loop_actions = []
                 loop_selectors = []
                 loop_texts = []
@@ -163,11 +161,18 @@ async def submit_url(
                     loop_selectors.append(selectors[i] if i < len(selectors) else None)
                     loop_texts.append(texts[i] if i < len(texts) else None)
                     i += 1
-                for _ in range(int(loop_count)):
+
+                for _ in range(loop_count):
                     for loop_action, loop_selector, loop_text in zip(loop_actions, loop_selectors, loop_texts):
-                        execute_action(loop_action, loop_selector, loop_text)
+                        result = execute_action(loop_action, loop_selector, loop_text)
+                        if result:
+                            action_messages.append(result)
+
+                action_messages.append(f"Executed loop {loop_count} times with actions: {', '.join(loop_actions)}")
             elif action != "exit_loop":
-                execute_action(action, selector, text)
+                result = execute_action(action, selector, text)
+                if result:
+                    action_messages.append(result)
             i += 1
 
         html_content = f"""
@@ -178,7 +183,8 @@ async def submit_url(
             <body>
                 <h1>URL Submitted</h1>
                 <p>You submitted the following URL: {url}</p>
-                {"".join(f"<p>{msg}</p>" for msg in action_messages)}
+                {"".join(f"<p>{msg}</p>" for msg in action_messages if not msg.startswith('Executed loop'))}
+                <p>{', '.join([msg for msg in action_messages if msg.startswith('Executed loop')])}</p>
                 <a href="/">Perform another action</a>
             </body>
         </html>
