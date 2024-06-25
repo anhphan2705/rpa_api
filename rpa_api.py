@@ -45,7 +45,7 @@ async def read_root():
                             <option value="done">Done!</option>
                         </select><br><br>
                         <div class="selectorInput" style="display: none;">
-                            <label for="selector">Enter the object HTML signature (optional):</label>
+                            <label for="selector">Enter the element identifier (optional):</label>
                             <input type="text" class="selector" name="selectors"><br><br>
                             <div class="typeInput" style="display: none;">
                                 <label for="text">Enter the text to type:</label>
