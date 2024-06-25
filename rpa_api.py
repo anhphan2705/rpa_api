@@ -2,7 +2,6 @@ from fastapi import FastAPI, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 import os
-import pandas as pd
 import rpa as r
 import uuid
 
@@ -37,11 +36,13 @@ async def read_root():
                             <option value="">Select an action</option>
                             <option value="url">Connect to URL</option>
                             <option value="click">Click on Button</option>
+                            <option value="right_click">Right Click on Element</option>
+                            <option value="double_click">Double Click on Element</option>
+                            <option value="hover">Hover on Element</option>
                             <option value="read">Read Text from Element</option>
                             <option value="type">Type into Input Field</option>
                             <option value="snap">Snap Screenshot</option>
                             <option value="select">Select from Dropdown</option>
-                            <option value="upload_excel">Upload Excel File</option>
                             <option value="load_file">Load Data from File</option>
                             <option value="write">Append to File</option>
                             <option value="loop">Start Loop</option>
@@ -67,11 +68,6 @@ async def read_root():
                             <label for="file_name">Enter the file name to append to (optional):</label>
                             <input type="text" class="file_name" name="file_names"><br><br>
                         </div>
-                        <div class="excelInput" style="display: none;">
-                            <label for="excel_file">Upload an Excel file:</label>
-                            <input type="file" class="excel_file" name="excel_files" accept=".xlsx, .xls" onchange="uploadExcelFile(this)"><br><br>
-                            <div id="excelResult"></div>
-                        </div>
                         <div class="fileInput" style="display: none;">
                             <label for="load_file">Upload a file to load data:</label>
                             <input type="file" class="load_file" name="load_files" accept=".txt, .csv, .json" onchange="loadFileData(this)"><br><br>
@@ -92,14 +88,12 @@ async def read_root():
                     var typeInput = selectElement.parentElement.querySelector('.typeInput');
                     var selectInput = selectElement.parentElement.querySelector('.selectInput');
                     var writeInput = selectElement.parentElement.querySelector('.writeInput');
-                    var excelInput = selectElement.parentElement.querySelector('.excelInput');
                     var fileInput = selectElement.parentElement.querySelector('.fileInput');
                     var loopInput = selectElement.parentElement.querySelector('.loopInput');
 
                     // Show or hide input fields based on the selected action
-                    if (action === 'url' || action === 'click' || action === 'read' || action === 'type' || action === 'select') {
+                    if (action === 'url' || action === 'click' || action === 'right_click' || action === 'double_click' || action === 'hover' || action === 'read' || action === 'type' || action === 'select') {
                         selectorInput.style.display = 'block';
-                        excelInput.style.display = 'none';
                         fileInput.style.display = 'none';
                         writeInput.style.display = 'none';
                         loopInput.style.display = 'none';
@@ -121,7 +115,6 @@ async def read_root():
                         addAction(indentLevel);
                     } else if (action === 'snap') {
                         selectorInput.style.display = 'none';
-                        excelInput.style.display = 'none';
                         fileInput.style.display = 'none';
                         writeInput.style.display = 'none';
                         loopInput.style.display = 'none';
@@ -129,27 +122,17 @@ async def read_root():
                     } else if (action === 'write') {
                         selectorInput.style.display = 'none';
                         writeInput.style.display = 'block';
-                        excelInput.style.display = 'none';
                         fileInput.style.display = 'none';
-                        loopInput.style.display = 'none';
-                        addAction(indentLevel);
-                    } else if (action === 'upload_excel') {
-                        selectorInput.style.display = 'none';
-                        excelInput.style.display = 'block';
-                        fileInput.style.display = 'none';
-                        writeInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         addAction(indentLevel);
                     } else if (action === 'load_file') {
                         selectorInput.style.display = 'none';
-                        excelInput.style.display = 'none';
                         fileInput.style.display = 'block';
                         writeInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         addAction(indentLevel);
                     } else if (action === 'loop') {
                         selectorInput.style.display = 'none';
-                        excelInput.style.display = 'none';
                         fileInput.style.display = 'none';
                         writeInput.style.display = 'none';
                         loopInput.style.display = 'none';
@@ -158,14 +141,12 @@ async def read_root():
                         addAction(indentLevel + 1);
                     } else if (action === 'loop_times') {
                         selectorInput.style.display = 'none';
-                        excelInput.style.display = 'none';
                         fileInput.style.display = 'none';
                         writeInput.style.display = 'none';
                         loopInput.style.display = 'block';
                         addAction(indentLevel);
                     } else if (action === 'exit_loop') {
                         selectorInput.style.display = 'none';
-                        excelInput.style.display = 'none';
                         fileInput.style.display = 'none';
                         writeInput.style.display = 'none';
                         loopInput.style.display = 'none';
@@ -180,31 +161,10 @@ async def read_root():
                         document.getElementById('submitBtn').style.display = 'block';
                     } else {
                         selectorInput.style.display = 'none';
-                        excelInput.style.display = 'none';
                         fileInput.style.display = 'none';
                         writeInput.style.display = 'none';
                         loopInput.style.display = 'none';
                     }
-                }
-
-                // Function to handle Excel file upload
-                function uploadExcelFile(input) {
-                    var file = input.files[0];
-                    var formData = new FormData();
-                    formData.append("file", file);
-
-                    fetch("/upload_excel", {
-                        method: "POST",
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById('result').innerHTML = `Rows: ${data.rows}, Columns: ${data.columns}<br><pre style="white-space: pre-wrap;">${JSON.stringify(data.data, null, 2)}</pre>`;
-                    })
-                    .catch(error => {
-                        console.error("Error uploading Excel file:", error);
-                        document.getElementById('result').innerHTML = "Error uploading Excel file.";
-                    });
                 }
 
                 // Function to handle file upload and load data
@@ -259,17 +219,6 @@ async def load_file(file: UploadFile = File(...)):
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
 
-# Endpoint to handle Excel file upload and return row and column data
-@app.post("/upload_excel")
-async def upload_excel(file: UploadFile = File(...)):
-    try:
-        df = pd.read_excel(file.file)
-        rows, columns = df.shape
-        data = df.to_dict(orient='records')
-        return JSONResponse(content={"rows": rows, "columns": columns, "data": data})
-    except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=400)
-
 # Endpoint to handle form submission and execute actions
 @app.post("/result", response_class=HTMLResponse)
 async def submit_url(
@@ -278,7 +227,6 @@ async def submit_url(
     texts: list[str] = Form(None),
     options: list[str] = Form(None),
     loop_counts: list[str] = Form(None),
-    excel_files: list[UploadFile] = Form(None),
     load_files: list[UploadFile] = Form(None),
     write_texts: list[str] = Form(None),
     file_names: list[str] = Form(None)
@@ -297,6 +245,15 @@ async def submit_url(
             elif action == "click" and selector:
                 r.click(selector)
                 return f"Clicked on button ID: {selector}"
+            elif action == "right_click" and selector:
+                r.rclick(selector)
+                return f"Right-clicked on element ID: {selector}"
+            elif action == "double_click" and selector:
+                r.dclick(selector)
+                return f"Double-clicked on element ID: {selector}"
+            elif action == "hover" and selector:
+                r.hover(selector)
+                return f"Hovered over element ID: {selector}"
             elif action == "read" and selector:
                 read_text = r.read(selector)
                 return f"Read text from ID {selector}: {read_text}"
@@ -306,19 +263,13 @@ async def submit_url(
             elif action == "snap":
                 filename = f"screenshot_{uuid.uuid4().hex}.png"
                 file_path = os.path.join("screenshots", filename)
-                r.wait(1)
+                r.wait(0.5)
                 r.snap('page', file_path)
                 screenshots.append(file_path)
                 return f"Screenshot saved as {filename}"
             elif action == "select" and selector and option:
                 r.select(selector, option)
                 return f"Selected option {option} from ID {selector}"
-            elif action == "upload_excel" and file:
-                file_path = f"/mnt/data/{file.filename}"
-                with open(file_path, "wb") as f:
-                    f.write(file.file.read())
-                df = pd.read_excel(file_path)
-                return f"Uploaded and processed Excel file: {file.filename} with {df.shape[0]} rows and {df.shape[1]} columns."
             elif action == "load_file" and file:
                 content = file.file.read().decode('utf-8')
                 return f"Loaded data from file: {file.filename} with content: {content}"
@@ -327,8 +278,7 @@ async def submit_url(
                     file_path = os.path.join("written_files", file_name)
                 else:
                     file_path = f"written_files/written_{uuid.uuid4().hex}.txt"
-                with open(file_path, "a") as f:
-                    f.write(write_text + "\n")
+                r.write(file_path, write_text)
                 written_files.append(file_path)
                 return f"Appended text to file: {file_path}"
 
@@ -338,8 +288,7 @@ async def submit_url(
             selector = selectors[i] if i < len(selectors) else None
             text = texts[i] if i < len(texts) else None
             option = options[i] if i < len(options) else None
-            file = excel_files[i] if i < len(excel_files) else None
-            load_file = load_files[i] if i < len(load_files) else None
+            file = load_files[i] if i < len(load_files) else None
             write_text = write_texts[i] if i < len(write_texts) else None
             file_name = file_names[i] if i < len(file_names) else None
             loop_count = int(loop_counts[i]) if i < len(loop_counts) and loop_counts[i].isdigit() else 1
@@ -351,7 +300,6 @@ async def submit_url(
                 loop_texts = []
                 loop_options = []
                 loop_files = []
-                loop_load_files = []
                 loop_write_texts = []
                 loop_file_names = []
                 i += 1
@@ -360,14 +308,13 @@ async def submit_url(
                     loop_selectors.append(selectors[i] if i < len(selectors) else None)
                     loop_texts.append(texts[i] if i < len(texts) else None)
                     loop_options.append(options[i] if i < len(options) else None)
-                    loop_files.append(excel_files[i] if i < len(excel_files) else None)
-                    loop_load_files.append(load_files[i] if i < len(load_files) else None)
+                    loop_files.append(load_files[i] if i < len(load_files) else None)
                     loop_write_texts.append(write_texts[i] if i < len(write_texts) else None)
                     loop_file_names.append(file_names[i] if i < len(file_names) else None)
                     i += 1
 
                 for _ in range(loop_count):
-                    for loop_action, loop_selector, loop_text, loop_option, loop_file, loop_load_file, loop_write_text, loop_file_name in zip(loop_actions, loop_selectors, loop_texts, loop_options, loop_files, loop_load_files, loop_write_texts, loop_file_names):
+                    for loop_action, loop_selector, loop_text, loop_option, loop_file, loop_write_text, loop_file_name in zip(loop_actions, loop_selectors, loop_texts, loop_options, loop_files, loop_write_texts, loop_file_names):
                         result = execute_action(loop_action, loop_selector, loop_text, loop_option, loop_file, loop_write_text, loop_file_name)
                         if result:
                             action_messages.append(result)
