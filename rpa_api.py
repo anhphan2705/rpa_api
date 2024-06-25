@@ -12,6 +12,7 @@ async def read_root():
             <title>Welcome Page</title>
             <script>
                 var loopCounter = 0;
+                var inLoop = false;
 
                 function addAction(indentLevel = 0) {
                     var actionDiv = document.createElement('div');
@@ -25,8 +26,9 @@ async def read_root():
                             <option value="click">Click on Button</option>
                             <option value="read">Read Text from Element</option>
                             <option value="type">Type into Input Field</option>
-                            <option value="loop">Loop</option>
-                            <option value="exit_loop">Exit Loop</option>
+                            <option value="loop">Start Loop</option>
+                            <option value="loop_times">Enter Loop Times</option>
+                            <option value="exit_loop">End Loop</option>
                             <option value="done">Done!</option>
                         </select><br><br>
                         <div class="selectorInput" style="display: none;">
@@ -36,10 +38,10 @@ async def read_root():
                                 <label for="text">Enter the text to type:</label>
                                 <input type="text" class="text" name="texts"><br><br>
                             </div>
-                            <div class="loopInput" style="display: none;">
-                                <label for="loop_count">Enter the number of times to loop:</label>
-                                <input type="number" class="loop_count" name="loop_counts"><br><br>
-                            </div>
+                        </div>
+                        <div class="loopInput" style="display: none;">
+                            <label for="loop_count">Enter the number of times to loop:</label>
+                            <input type="number" class="loop_count" name="loop_counts" min="1"><br><br>
                         </div>
                     `;
                     document.getElementById('actionsContainer').appendChild(actionDiv);
@@ -68,12 +70,19 @@ async def read_root():
                         addAction(indentLevel);
                     } else if (action === 'loop') {
                         selectorInput.style.display = 'none';
-                        loopInput.style.display = 'block';
+                        loopInput.style.display = 'none';
+                        inLoop = true;
                         loopCounter++;
+                        addAction(indentLevel + 1);
+                    } else if (action === 'loop_times') {
+                        selectorInput.style.display = 'none';
+                        loopInput.style.display = 'block';
+                        // After entering loop times, re-show action selection
                         addAction(indentLevel + 1);
                     } else if (action === 'exit_loop') {
                         selectorInput.style.display = 'none';
                         loopInput.style.display = 'none';
+                        inLoop = false;
                         loopCounter--;
                         if (loopCounter > 0) {
                             addAction(indentLevel - 1);
@@ -84,6 +93,7 @@ async def read_root():
                         document.getElementById('submitBtn').style.display = 'block';
                     } else {
                         selectorInput.style.display = 'none';
+                        loopInput.style.display = 'none';
                     }
                 }
 
@@ -143,7 +153,7 @@ async def submit_url(
             text = texts[i] if i < len(texts) else None
             loop_count = loop_counts[i] if i < len(loop_counts) else None
 
-            if action == "loop" and loop_count:
+            if action == "loop_times" and loop_count:
                 loop_actions = []
                 loop_selectors = []
                 loop_texts = []
