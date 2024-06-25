@@ -2,7 +2,22 @@
 
 ## Overview
 
-This project provides a simple and intuitive web-based UI to design and execute RPA (Robotic Process Automation) tasks using FastAPI. Users can create workflows by selecting various actions such as connecting to a URL, clicking buttons, typing text, and more. The actions are executed in sequence, and the results are displayed on the same page.
+This project provides a simple and intuitive web-based UI to design and execute RPA (Robotic Process Automation) tasks using FastAPI. Users can create workflows by selecting various actions such as connecting to a URL, clicking buttons, typing text, and more. The actions are executed sequentially, and the results are displayed on the same page.
+
+## Table of Contents
+
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Usage](#usage)
+- [API Endpoints](#api-endpoints)
+  - [GET /](#get-)
+  - [POST /load_file](#post-load_file)
+  - [POST /result](#post-result)
+- [Project Structure](#project-structure)
+- [Contributing](#contributing)
+- [License](#license)
+- [Credits](#credits)
 
 ## Features
 
@@ -67,7 +82,7 @@ This project provides a simple and intuitive web-based UI to design and execute 
 3. **Create a workflow:**
 
     - Select actions from the dropdown menu.
-    - Fill in required details for each action.
+    - Fill in the required details for each action.
     - Add more actions as needed.
 
 4. **Submit the workflow:**
@@ -137,4 +152,4 @@ This project is licensed under the Apache 2.0 License. See the LICENSE file for 
 This project makes use of the following open-source projects:
 
 - **[RPA for Python](https://github.com/tebelorg/RPA-Python):** A simple and powerful RPA (Robotic Process Automation) library for Python.
-- **[FastAPI](https://github.com/tiangolo/fastapi):** A modern, fast (high-performance), web framework for building APIs with Python 3.7+ based on standard Python type hints.
+- **[FastAPI](https://github.com/tiangolo/fastapi):** A modern, fast, and high-performance web framework for building APIs with Python 3.7+ based on standard Python type hints.
