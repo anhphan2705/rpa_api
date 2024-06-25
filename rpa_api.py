@@ -27,6 +27,7 @@ async def read_root():
                             <option value="read">Read Text from Element</option>
                             <option value="type">Type into Input Field</option>
                             <option value="snap">Snap Screenshot</option>
+                            <option value="select">Select from Dropdown</option>
                             <option value="loop">Start Loop</option>
                             <option value="loop_times">Loop Amount</option>
                             <option value="exit_loop">End Loop</option>
@@ -38,6 +39,10 @@ async def read_root():
                             <div class="typeInput" style="display: none;">
                                 <label for="text">Enter the text to type:</label>
                                 <input type="text" class="text" name="texts"><br><br>
+                            </div>
+                            <div class="selectInput" style="display: none;">
+                                <label for="option">Enter the option to select:</label>
+                                <input type="text" class="option" name="options"><br><br>
                             </div>
                         </div>
                         <div class="snapInput" style="display: none;">
@@ -57,10 +62,11 @@ async def read_root():
                     var selectorInput = selectElement.parentElement.querySelector('.selectorInput');
                     var selectorLabel = selectorInput.querySelector('label[for="selector"]');
                     var typeInput = selectElement.parentElement.querySelector('.typeInput');
+                    var selectInput = selectElement.parentElement.querySelector('.selectInput');
                     var snapInput = selectElement.parentElement.querySelector('.snapInput');
                     var loopInput = selectElement.parentElement.querySelector('.loopInput');
 
-                    if (action === 'url' || action === 'click' || action === 'read' || action === 'type') {
+                    if (action === 'url' || action === 'click' || action === 'read' || action === 'type' || action === 'select') {
                         selectorInput.style.display = 'block';
                         snapInput.style.display = 'none';
                         loopInput.style.display = 'none';
@@ -71,8 +77,13 @@ async def read_root():
                         }
                         if (action === 'type') {
                             typeInput.style.display = 'block';
+                            selectInput.style.display = 'none';
+                        } else if (action === 'select') {
+                            selectInput.style.display = 'block';
+                            typeInput.style.display = 'none';
                         } else {
                             typeInput.style.display = 'none';
+                            selectInput.style.display = 'none';
                         }
                         addAction(indentLevel);
                     } else if (action === 'snap') {
@@ -138,15 +149,16 @@ async def submit_url(
     actions: list[str] = Form(...),
     selectors: list[str] = Form(None),
     texts: list[str] = Form(None),
+    options: list[str] = Form(None),
     filenames: list[str] = Form(None),
     loop_counts: list[str] = Form(None)
 ):
     try:
-        r.init(turbo_mode=False, headless_mode=False)
+        r.init(turbo_mode=True, headless_mode=False)
         r.url(url)
         action_messages = []
 
-        def execute_action(action, selector, text, filename):
+        def execute_action(action, selector, text, option, filename):
             if action == "url" and selector:
                 r.url(selector)
                 return f"Connected to URL: {selector}"
@@ -164,12 +176,16 @@ async def submit_url(
                 r.wait(1)
                 r.snap('page', filename)
                 return f"Screenshot saved as {filename}"
+            elif action == "select" and selector and option:
+                r.select(selector, option)
+                return f"Selected option {option} from ID {selector}"
 
         i = 0
         while i < len(actions):
             action = actions[i]
             selector = selectors[i] if i < len(selectors) else None
             text = texts[i] if i < len(texts) else None
+            option = options[i] if i < len(options) else None
             filename = filenames[i] if i < len(filenames) else None
             loop_count = int(loop_counts[i]) if i < len(loop_counts) and loop_counts[i].isdigit() else 1
 
@@ -177,24 +193,26 @@ async def submit_url(
                 loop_actions = []
                 loop_selectors = []
                 loop_texts = []
+                loop_options = []
                 loop_filenames = []
                 i += 1
                 while i < len(actions) and actions[i] != "exit_loop":
                     loop_actions.append(actions[i])
                     loop_selectors.append(selectors[i] if i < len(selectors) else None)
                     loop_texts.append(texts[i] if i < len(texts) else None)
+                    loop_options.append(options[i] if i < len(options) else None)
                     loop_filenames.append(filenames[i] if i < len(filenames) else None)
                     i += 1
 
                 for _ in range(loop_count):
-                    for loop_action, loop_selector, loop_text, loop_filename in zip(loop_actions, loop_selectors, loop_texts, loop_filenames):
-                        result = execute_action(loop_action, loop_selector, loop_text, loop_filename)
+                    for loop_action, loop_selector, loop_text, loop_option, loop_filename in zip(loop_actions, loop_selectors, loop_texts, loop_options, loop_filenames):
+                        result = execute_action(loop_action, loop_selector, loop_text, loop_option, loop_filename)
                         if result:
                             action_messages.append(result)
 
                 action_messages.append(f"Executed loop {loop_count} times with actions: {', '.join(loop_actions)}")
             elif action != "exit_loop":
-                result = execute_action(action, selector, text, filename)
+                result = execute_action(action, selector, text, option, filename)
                 if result:
                     action_messages.append(result)
             i += 1
