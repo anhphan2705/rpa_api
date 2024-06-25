@@ -45,6 +45,7 @@ async def read_root():
                             <option value="select">Select from Dropdown</option>
                             <option value="load_file">Load Data from File</option>
                             <option value="write">Write to File</option>
+                            <option value="ask">Ask for Input</option>
                             <option value="loop">Start Loop</option>
                             <option value="loop_times">Loop Amount</option>
                             <option value="exit_loop">End Loop</option>
@@ -68,6 +69,10 @@ async def read_root():
                             <label for="file_name">Enter the file name to write to (optional) (use the same name as uploaded file to append):</label>
                             <input type="text" class="file_name" name="file_names"><br><br>
                         </div>
+                        <div class="askInput" style="display: none;">
+                            <label for="ask_text">Enter the question to ask:</label>
+                            <input type="text" class="ask_text" name="ask_texts"><br><br>
+                        </div>
                         <div class="fileInput" style="display: none;">
                             <label for="load_file">Upload a file to load data:</label>
                             <input type="file" class="load_file" name="load_files" accept=".txt, .csv, .json" onchange="loadFileData(this)"><br><br>
@@ -88,6 +93,7 @@ async def read_root():
                     var typeInput = selectElement.parentElement.querySelector('.typeInput');
                     var selectInput = selectElement.parentElement.querySelector('.selectInput');
                     var writeInput = selectElement.parentElement.querySelector('.writeInput');
+                    var askInput = selectElement.parentElement.querySelector('.askInput');
                     var fileInput = selectElement.parentElement.querySelector('.fileInput');
                     var loopInput = selectElement.parentElement.querySelector('.loopInput');
 
@@ -96,6 +102,7 @@ async def read_root():
                         selectorInput.style.display = 'block';
                         fileInput.style.display = 'none';
                         writeInput.style.display = 'none';
+                        askInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         if (action === 'url') {
                             selectorLabel.textContent = 'Enter URL:';
@@ -117,24 +124,35 @@ async def read_root():
                         selectorInput.style.display = 'none';
                         fileInput.style.display = 'none';
                         writeInput.style.display = 'none';
+                        askInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         addAction(indentLevel);
                     } else if (action === 'write') {
                         selectorInput.style.display = 'none';
                         writeInput.style.display = 'block';
                         fileInput.style.display = 'none';
+                        askInput.style.display = 'none';
+                        loopInput.style.display = 'none';
+                        addAction(indentLevel);
+                    } else if (action === 'ask') {
+                        selectorInput.style.display = 'none';
+                        writeInput.style.display = 'none';
+                        fileInput.style.display = 'none';
+                        askInput.style.display = 'block';
                         loopInput.style.display = 'none';
                         addAction(indentLevel);
                     } else if (action === 'load_file') {
                         selectorInput.style.display = 'none';
                         fileInput.style.display = 'block';
                         writeInput.style.display = 'none';
+                        askInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         addAction(indentLevel);
                     } else if (action === 'loop') {
                         selectorInput.style.display = 'none';
                         fileInput.style.display = 'none';
                         writeInput.style.display = 'none';
+                        askInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         inLoop = true;
                         loopCounter++;
@@ -143,12 +161,14 @@ async def read_root():
                         selectorInput.style.display = 'none';
                         fileInput.style.display = 'none';
                         writeInput.style.display = 'none';
+                        askInput.style.display = 'none';
                         loopInput.style.display = 'block';
                         addAction(indentLevel);
                     } else if (action === 'exit_loop') {
                         selectorInput.style.display = 'none';
                         fileInput.style.display = 'none';
                         writeInput.style.display = 'none';
+                        askInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         inLoop = false;
                         loopCounter--;
@@ -163,6 +183,7 @@ async def read_root():
                         selectorInput.style.display = 'none';
                         fileInput.style.display = 'none';
                         writeInput.style.display = 'none';
+                        askInput.style.display = 'none';
                         loopInput.style.display = 'none';
                     }
                 }
@@ -228,6 +249,7 @@ async def submit_url(
     selectors: list[str] = Form(None),
     texts: list[str] = Form(None),
     options: list[str] = Form(None),
+    ask_texts: list[str] = Form(None),
     loop_counts: list[str] = Form(None),
     load_files: list[UploadFile] = Form(None),
     write_texts: list[str] = Form(None),
@@ -240,7 +262,7 @@ async def submit_url(
         written_files = []
 
         # Function to execute individual actions
-        def execute_action(action, selector, text, option, file, write_text, file_name):
+        def execute_action(action, selector, text, option, ask_text, file, write_text, file_name):
             if action == "url" and selector:
                 r.url(selector)
                 return f"Connected to URL: {selector}"
@@ -272,6 +294,9 @@ async def submit_url(
             elif action == "select" and selector and option:
                 r.select(selector, option)
                 return f"Selected option {option} from ID {selector}"
+            elif action == "ask" and ask_text:
+                user_response = r.ask(ask_text)
+                return f"User input for question '{ask_text}': {user_response}"
             elif action == "load_file" and file:
                 content = file.file.read().decode('utf-8')
                 return f"Loaded data from file: {file.filename} with content: {content}"
@@ -290,6 +315,7 @@ async def submit_url(
             selector = selectors[i] if i < len(selectors) else None
             text = texts[i] if i < len(texts) else None
             option = options[i] if i < len(options) else None
+            ask_text = ask_texts[i] if i < len(ask_texts) else None
             file = load_files[i] if i < len(load_files) else None
             write_text = write_texts[i] if i < len(write_texts) else None
             file_name = file_names[i] if i < len(file_names) else None
@@ -301,6 +327,7 @@ async def submit_url(
                 loop_selectors = []
                 loop_texts = []
                 loop_options = []
+                loop_ask_texts = []
                 loop_files = []
                 loop_write_texts = []
                 loop_file_names = []
@@ -310,20 +337,21 @@ async def submit_url(
                     loop_selectors.append(selectors[i] if i < len(selectors) else None)
                     loop_texts.append(texts[i] if i < len(texts) else None)
                     loop_options.append(options[i] if i < len(options) else None)
+                    loop_ask_texts.append(ask_texts[i] if i < len(ask_texts) else None)
                     loop_files.append(load_files[i] if i < len(load_files) else None)
                     loop_write_texts.append(write_texts[i] if i < len(write_texts) else None)
                     loop_file_names.append(file_names[i] if i < len(file_names) else None)
                     i += 1
 
                 for _ in range(loop_count):
-                    for loop_action, loop_selector, loop_text, loop_option, loop_file, loop_write_text, loop_file_name in zip(loop_actions, loop_selectors, loop_texts, loop_options, loop_files, loop_write_texts, loop_file_names):
-                        result = execute_action(loop_action, loop_selector, loop_text, loop_option, loop_file, loop_write_text, loop_file_name)
+                    for loop_action, loop_selector, loop_text, loop_option, loop_ask_text, loop_file, loop_write_text, loop_file_name in zip(loop_actions, loop_selectors, loop_texts, loop_options, loop_ask_texts, loop_files, loop_write_texts, loop_file_names):
+                        result = execute_action(loop_action, loop_selector, loop_text, loop_option, loop_ask_text, loop_file, loop_write_text, loop_file_name)
                         if result:
                             action_messages.append(result)
 
                 action_messages.append(f"Executed loop {loop_count} times with actions: {', '.join(loop_actions)}")
             elif action != "exit_loop":
-                result = execute_action(action, selector, text, option, file, write_text, file_name)
+                result = execute_action(action, selector, text, option, ask_text, file, write_text, file_name)
                 if result:
                     action_messages.append(result)
             i += 1
@@ -343,7 +371,7 @@ async def submit_url(
                 <p>{', '.join([msg for msg in action_messages if msg.startswith('Executed loop')])}</p>
                 <a href="/">Perform another action</a><br>
                 {screenshot_html}
-                <h2>Written Files</h2>
+                <h2>Files Available for Download</h2>
                 {written_files_html}
             </body>
         </html>
