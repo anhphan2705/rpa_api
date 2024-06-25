@@ -35,14 +35,12 @@ async def read_root():
                             <option value="">Select an action</option>
                             <option value="url">Connect to URL</option>
                             <option value="click">Click on Button</option>
-                            <option value="rclick">Right Click an Element</option>
-                            <option value="dclick">Double Click an Element</option>
-                            <option value="hover">Hover over Element</option>
                             <option value="read">Read Text from Element</option>
                             <option value="type">Type into Input Field</option>
                             <option value="snap">Snap Screenshot</option>
                             <option value="select">Select from Dropdown</option>
                             <option value="upload_excel">Upload Excel File</option>
+                            <option value="load_file">Load Data from File</option>
                             <option value="loop">Start Loop</option>
                             <option value="loop_times">Loop Amount</option>
                             <option value="exit_loop">End Loop</option>
@@ -65,6 +63,10 @@ async def read_root():
                             <input type="file" class="excel_file" name="excel_files" accept=".xlsx, .xls" onchange="uploadExcelFile(this)"><br><br>
                             <div id="excelResult"></div>
                         </div>
+                        <div class="fileInput" style="display: none;">
+                            <label for="load_file">Upload a file to load data:</label>
+                            <input type="file" class="load_file" name="load_files" accept=".txt, .csv, .json" onchange="loadFileData(this)"><br><br>
+                        </div>
                         <div class="loopInput" style="display: none;">
                             <label for="loop_count">Enter the number of times to loop:</label>
                             <input type="number" class="loop_count" name="loop_counts" min="1"><br><br>
@@ -81,12 +83,14 @@ async def read_root():
                     var typeInput = selectElement.parentElement.querySelector('.typeInput');
                     var selectInput = selectElement.parentElement.querySelector('.selectInput');
                     var excelInput = selectElement.parentElement.querySelector('.excelInput');
+                    var fileInput = selectElement.parentElement.querySelector('.fileInput');
                     var loopInput = selectElement.parentElement.querySelector('.loopInput');
 
                     // Show or hide input fields based on the selected action
-                    if (action === 'url' || action === 'click' || action === 'rclick' || action === 'dclick' || action === 'hover' || action === 'read' || action === 'type' || action === 'select') {
+                    if (action === 'url' || action === 'click' || action === 'read' || action === 'type' || action === 'select') {
                         selectorInput.style.display = 'block';
                         excelInput.style.display = 'none';
+                        fileInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         if (action === 'url') {
                             selectorLabel.textContent = 'Enter URL:';
@@ -107,16 +111,25 @@ async def read_root():
                     } else if (action === 'snap') {
                         selectorInput.style.display = 'none';
                         excelInput.style.display = 'none';
+                        fileInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         addAction(indentLevel);
                     } else if (action === 'upload_excel') {
                         selectorInput.style.display = 'none';
                         excelInput.style.display = 'block';
+                        fileInput.style.display = 'none';
+                        loopInput.style.display = 'none';
+                        addAction(indentLevel);
+                    } else if (action === 'load_file') {
+                        selectorInput.style.display = 'none';
+                        excelInput.style.display = 'none';
+                        fileInput.style.display = 'block';
                         loopInput.style.display = 'none';
                         addAction(indentLevel);
                     } else if (action === 'loop') {
                         selectorInput.style.display = 'none';
                         excelInput.style.display = 'none';
+                        fileInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         inLoop = true;
                         loopCounter++;
@@ -124,11 +137,13 @@ async def read_root():
                     } else if (action === 'loop_times') {
                         selectorInput.style.display = 'none';
                         excelInput.style.display = 'none';
+                        fileInput.style.display = 'none';
                         loopInput.style.display = 'block';
                         addAction(indentLevel);
                     } else if (action === 'exit_loop') {
                         selectorInput.style.display = 'none';
                         excelInput.style.display = 'none';
+                        fileInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         inLoop = false;
                         loopCounter--;
@@ -142,6 +157,7 @@ async def read_root():
                     } else {
                         selectorInput.style.display = 'none';
                         excelInput.style.display = 'none';
+                        fileInput.style.display = 'none';
                         loopInput.style.display = 'none';
                     }
                 }
@@ -158,11 +174,31 @@ async def read_root():
                     })
                     .then(response => response.json())
                     .then(data => {
-                        document.getElementById('excelResult').innerHTML = `Rows: ${data.rows}, Columns: ${data.columns}<br><pre>${data.data}</pre>`;
+                        document.getElementById('result').innerHTML = `Rows: ${data.rows}, Columns: ${data.columns}<br><pre style="white-space: pre-wrap;">${JSON.stringify(data.data, null, 2)}</pre>`;
                     })
                     .catch(error => {
                         console.error("Error uploading Excel file:", error);
-                        document.getElementById('excelResult').innerHTML = "Error uploading Excel file.";
+                        document.getElementById('result').innerHTML = "Error uploading Excel file.";
+                    });
+                }
+
+                // Function to handle file upload and load data
+                function loadFileData(input) {
+                    var file = input.files[0];
+                    var formData = new FormData();
+                    formData.append("file", file);
+
+                    fetch("/load_file", {
+                        method: "POST",
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('result').innerHTML = `<pre style="white-space: pre-wrap;">${data.content}</pre>`;
+                    })
+                    .catch(error => {
+                        console.error("Error loading file:", error);
+                        document.getElementById('result').innerHTML = "Error loading file.";
                     });
                 }
 
@@ -176,14 +212,27 @@ async def read_root():
         <body>
             <h1>Welcome to Simple RPA UI</h1>
             <p>This is a simplified process planner for your RPA.</p>
-            <form action="/result" method="post" enctype="multipart/form-data">
-                <div id="actionsContainer"></div>
-                <button type="submit" id="submitBtn">Submit</button>
-            </form>
+            <div style="display: flex;">
+                <form action="/result" method="post" enctype="multipart/form-data" style="flex: 1;">
+                    <div id="actionsContainer"></div>
+                    <button type="submit" id="submitBtn">Submit</button>
+                </form>
+                <div id="result" style="flex: 1; padding: 20px;">
+                </div>
+            </div>
         </body>
     </html>
     """
     return HTMLResponse(content=html_content)
+
+# Endpoint to handle file upload and load data
+@app.post("/load_file")
+async def load_file(file: UploadFile = File(...)):
+    try:
+        content = file.file.read().decode('utf-8')
+        return JSONResponse(content={"content": content})
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=400)
 
 # Endpoint to handle Excel file upload and return row and column data
 @app.post("/upload_excel")
@@ -204,7 +253,8 @@ async def submit_url(
     texts: list[str] = Form(None),
     options: list[str] = Form(None),
     loop_counts: list[str] = Form(None),
-    excel_files: list[UploadFile] = Form(None)
+    excel_files: list[UploadFile] = Form(None),
+    load_files: list[UploadFile] = Form(None)
 ):
     try:
         r.init(turbo_mode=True, headless_mode=False)
@@ -219,15 +269,6 @@ async def submit_url(
             elif action == "click" and selector:
                 r.click(selector)
                 return f"Clicked on button ID: {selector}"
-            elif action == "rclick" and selector:
-                r.rclick(selector)
-                return f"Right-clicked on element ID: {selector}"
-            elif action == "dclick" and selector:
-                r.dclick(selector)
-                return f"Double-clicked on element ID: {selector}"
-            elif action == "hover" and selector:
-                r.hover(selector)
-                return f"Hovered over element ID: {selector}"
             elif action == "read" and selector:
                 read_text = r.read(selector)
                 return f"Read text from ID {selector}: {read_text}"
@@ -250,6 +291,9 @@ async def submit_url(
                     f.write(file.file.read())
                 df = pd.read_excel(file_path)
                 return f"Uploaded and processed Excel file: {file.filename} with {df.shape[0]} rows and {df.shape[1]} columns."
+            elif action == "load_file" and file:
+                content = file.file.read().decode('utf-8')
+                return f"Loaded data from file: {file.filename} with content: {content}"
 
         i = 0
         while i < len(actions):
@@ -258,6 +302,7 @@ async def submit_url(
             text = texts[i] if i < len(texts) else None
             option = options[i] if i < len(options) else None
             file = excel_files[i] if i < len(excel_files) else None
+            load_file = load_files[i] if i < len(load_files) else None
             loop_count = int(loop_counts[i]) if i < len(loop_counts) and loop_counts[i].isdigit() else 1
 
             # Handle looping actions
@@ -267,6 +312,7 @@ async def submit_url(
                 loop_texts = []
                 loop_options = []
                 loop_files = []
+                loop_load_files = []
                 i += 1
                 while i < len(actions) and actions[i] != "exit_loop":
                     loop_actions.append(actions[i])
@@ -274,10 +320,11 @@ async def submit_url(
                     loop_texts.append(texts[i] if i < len(texts) else None)
                     loop_options.append(options[i] if i < len(options) else None)
                     loop_files.append(excel_files[i] if i < len(excel_files) else None)
+                    loop_load_files.append(load_files[i] if i < len(load_files) else None)
                     i += 1
 
                 for _ in range(loop_count):
-                    for loop_action, loop_selector, loop_text, loop_option, loop_file in zip(loop_actions, loop_selectors, loop_texts, loop_options, loop_files):
+                    for loop_action, loop_selector, loop_text, loop_option, loop_file, loop_load_file in zip(loop_actions, loop_selectors, loop_texts, loop_options, loop_files, loop_load_files):
                         result = execute_action(loop_action, loop_selector, loop_text, loop_option, loop_file)
                         if result:
                             action_messages.append(result)
