@@ -1,7 +1,8 @@
-from fastapi import FastAPI, Form
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Form, File, UploadFile
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 import os
+import pandas as pd
 import rpa as r
 import uuid
 
@@ -37,6 +38,7 @@ async def read_root():
                             <option value="type">Type into Input Field</option>
                             <option value="snap">Snap Screenshot</option>
                             <option value="select">Select from Dropdown</option>
+                            <option value="upload_excel">Upload Excel File</option>
                             <option value="loop">Start Loop</option>
                             <option value="loop_times">Loop Amount</option>
                             <option value="exit_loop">End Loop</option>
@@ -54,6 +56,11 @@ async def read_root():
                                 <input type="text" class="option" name="options"><br><br>
                             </div>
                         </div>
+                        <div class="excelInput" style="display: none;">
+                            <label for="excel_file">Upload an Excel file:</label>
+                            <input type="file" class="excel_file" name="excel_files" accept=".xlsx, .xls" onchange="uploadExcelFile(this)"><br><br>
+                            <div id="excelResult"></div>
+                        </div>
                         <div class="loopInput" style="display: none;">
                             <label for="loop_count">Enter the number of times to loop:</label>
                             <input type="number" class="loop_count" name="loop_counts" min="1"><br><br>
@@ -68,10 +75,12 @@ async def read_root():
                     var selectorLabel = selectorInput.querySelector('label[for="selector"]');
                     var typeInput = selectElement.parentElement.querySelector('.typeInput');
                     var selectInput = selectElement.parentElement.querySelector('.selectInput');
+                    var excelInput = selectElement.parentElement.querySelector('.excelInput');
                     var loopInput = selectElement.parentElement.querySelector('.loopInput');
 
                     if (action === 'url' || action === 'click' || action === 'read' || action === 'type' || action === 'select') {
                         selectorInput.style.display = 'block';
+                        excelInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         if (action === 'url') {
                             selectorLabel.textContent = 'Enter URL:';
@@ -91,20 +100,29 @@ async def read_root():
                         addAction(indentLevel);
                     } else if (action === 'snap') {
                         selectorInput.style.display = 'none';
+                        excelInput.style.display = 'none';
+                        loopInput.style.display = 'none';
+                        addAction(indentLevel);
+                    } else if (action === 'upload_excel') {
+                        selectorInput.style.display = 'none';
+                        excelInput.style.display = 'block';
                         loopInput.style.display = 'none';
                         addAction(indentLevel);
                     } else if (action === 'loop') {
                         selectorInput.style.display = 'none';
+                        excelInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         inLoop = true;
                         loopCounter++;
                         addAction(indentLevel + 1);
                     } else if (action === 'loop_times') {
                         selectorInput.style.display = 'none';
+                        excelInput.style.display = 'none';
                         loopInput.style.display = 'block';
                         addAction(indentLevel);
                     } else if (action === 'exit_loop') {
                         selectorInput.style.display = 'none';
+                        excelInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         inLoop = false;
                         loopCounter--;
@@ -117,8 +135,28 @@ async def read_root():
                         document.getElementById('submitBtn').style.display = 'block';
                     } else {
                         selectorInput.style.display = 'none';
+                        excelInput.style.display = 'none';
                         loopInput.style.display = 'none';
                     }
+                }
+
+                function uploadExcelFile(input) {
+                    var file = input.files[0];
+                    var formData = new FormData();
+                    formData.append("file", file);
+
+                    fetch("/upload_excel", {
+                        method: "POST",
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('excelResult').innerHTML = `Rows: ${data.rows}, Columns: ${data.columns}`;
+                    })
+                    .catch(error => {
+                        console.error("Error uploading Excel file:", error);
+                        document.getElementById('excelResult').innerHTML = "Error uploading Excel file.";
+                    });
                 }
 
                 window.onload = function() {
@@ -130,7 +168,7 @@ async def read_root():
         <body>
             <h1>Welcome to My FastAPI Application</h1>
             <p>This is a simple welcome page.</p>
-            <form action="/result" method="post">
+            <form action="/result" method="post" enctype="multipart/form-data">
                 <label for="url">Enter a website URL:</label>
                 <input type="text" id="url" name="url" required><br><br>
                 <div id="actionsContainer"></div>
@@ -141,6 +179,15 @@ async def read_root():
     """
     return HTMLResponse(content=html_content)
 
+@app.post("/upload_excel")
+async def upload_excel(file: UploadFile = File(...)):
+    try:
+        df = pd.read_excel(file.file)
+        rows, columns = df.shape
+        return JSONResponse(content={"rows": rows, "columns": columns})
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=400)
+
 @app.post("/result", response_class=HTMLResponse)
 async def submit_url(
     url: str = Form(...),
@@ -148,15 +195,16 @@ async def submit_url(
     selectors: list[str] = Form(None),
     texts: list[str] = Form(None),
     options: list[str] = Form(None),
-    loop_counts: list[str] = Form(None)
+    loop_counts: list[str] = Form(None),
+    excel_files: list[UploadFile] = Form(None)
 ):
     try:
-        r.init(turbo_mode=True, headless_mode=False)
+        r.init(turbo_mode=False, headless_mode=False)
         r.url(url)
         action_messages = []
         screenshots = []
 
-        def execute_action(action, selector, text, option):
+        def execute_action(action, selector, text, option, file):
             if action == "url" and selector:
                 r.url(selector)
                 return f"Connected to URL: {selector}"
@@ -172,13 +220,19 @@ async def submit_url(
             elif action == "snap":
                 filename = f"screenshot_{uuid.uuid4().hex}.png"
                 file_path = os.path.join("screenshots", filename)
-                r.wait(0.5)
+                r.wait(1)
                 r.snap('page', file_path)
                 screenshots.append(file_path)
                 return f"Screenshot saved as {filename}"
             elif action == "select" and selector and option:
                 r.select(selector, option)
                 return f"Selected option {option} from ID {selector}"
+            elif action == "upload_excel" and file:
+                file_path = f"/mnt/data/{file.filename}"
+                with open(file_path, "wb") as f:
+                    f.write(file.file.read())
+                df = pd.read_excel(file_path)
+                return f"Uploaded and processed Excel file: {file.filename} with {df.shape[0]} rows and {df.shape[1]} columns."
 
         i = 0
         while i < len(actions):
@@ -186,6 +240,7 @@ async def submit_url(
             selector = selectors[i] if i < len(selectors) else None
             text = texts[i] if i < len(texts) else None
             option = options[i] if i < len(options) else None
+            file = excel_files[i] if i < len(excel_files) else None
             loop_count = int(loop_counts[i]) if i < len(loop_counts) and loop_counts[i].isdigit() else 1
 
             if action == "loop_times":
@@ -193,23 +248,25 @@ async def submit_url(
                 loop_selectors = []
                 loop_texts = []
                 loop_options = []
+                loop_files = []
                 i += 1
                 while i < len(actions) and actions[i] != "exit_loop":
                     loop_actions.append(actions[i])
                     loop_selectors.append(selectors[i] if i < len(selectors) else None)
                     loop_texts.append(texts[i] if i < len(texts) else None)
                     loop_options.append(options[i] if i < len(options) else None)
+                    loop_files.append(excel_files[i] if i < len(excel_files) else None)
                     i += 1
 
                 for _ in range(loop_count):
-                    for loop_action, loop_selector, loop_text, loop_option in zip(loop_actions, loop_selectors, loop_texts, loop_options):
-                        result = execute_action(loop_action, loop_selector, loop_text, loop_option)
+                    for loop_action, loop_selector, loop_text, loop_option, loop_file in zip(loop_actions, loop_selectors, loop_texts, loop_options, loop_files):
+                        result = execute_action(loop_action, loop_selector, loop_text, loop_option, loop_file)
                         if result:
                             action_messages.append(result)
 
                 action_messages.append(f"Executed loop {loop_count} times with actions: {', '.join(loop_actions)}")
             elif action != "exit_loop":
-                result = execute_action(action, selector, text, option)
+                result = execute_action(action, selector, text, option, file)
                 if result:
                     action_messages.append(result)
             i += 1
