@@ -1,8 +1,17 @@
 from fastapi import FastAPI, Form
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+import os
 import rpa as r
+import uuid
 
 app = FastAPI()
+
+# Ensure the 'screenshots' directory exists
+os.makedirs('screenshots', exist_ok=True)
+
+# Serve the static files in the 'screenshots' directory
+app.mount("/screenshots", StaticFiles(directory="screenshots"), name="screenshots")
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
@@ -45,10 +54,6 @@ async def read_root():
                                 <input type="text" class="option" name="options"><br><br>
                             </div>
                         </div>
-                        <div class="snapInput" style="display: none;">
-                            <label for="filename">Enter filename for screenshot (optional):</label>
-                            <input type="text" class="filename" name="filenames"><br><br>
-                        </div>
                         <div class="loopInput" style="display: none;">
                             <label for="loop_count">Enter the number of times to loop:</label>
                             <input type="number" class="loop_count" name="loop_counts" min="1"><br><br>
@@ -63,12 +68,10 @@ async def read_root():
                     var selectorLabel = selectorInput.querySelector('label[for="selector"]');
                     var typeInput = selectElement.parentElement.querySelector('.typeInput');
                     var selectInput = selectElement.parentElement.querySelector('.selectInput');
-                    var snapInput = selectElement.parentElement.querySelector('.snapInput');
                     var loopInput = selectElement.parentElement.querySelector('.loopInput');
 
                     if (action === 'url' || action === 'click' || action === 'read' || action === 'type' || action === 'select') {
                         selectorInput.style.display = 'block';
-                        snapInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         if (action === 'url') {
                             selectorLabel.textContent = 'Enter URL:';
@@ -88,24 +91,20 @@ async def read_root():
                         addAction(indentLevel);
                     } else if (action === 'snap') {
                         selectorInput.style.display = 'none';
-                        snapInput.style.display = 'block';
                         loopInput.style.display = 'none';
                         addAction(indentLevel);
                     } else if (action === 'loop') {
                         selectorInput.style.display = 'none';
-                        snapInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         inLoop = true;
                         loopCounter++;
                         addAction(indentLevel + 1);
                     } else if (action === 'loop_times') {
                         selectorInput.style.display = 'none';
-                        snapInput.style.display = 'none';
                         loopInput.style.display = 'block';
                         addAction(indentLevel);
                     } else if (action === 'exit_loop') {
                         selectorInput.style.display = 'none';
-                        snapInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         inLoop = false;
                         loopCounter--;
@@ -118,7 +117,6 @@ async def read_root():
                         document.getElementById('submitBtn').style.display = 'block';
                     } else {
                         selectorInput.style.display = 'none';
-                        snapInput.style.display = 'none';
                         loopInput.style.display = 'none';
                     }
                 }
@@ -150,15 +148,15 @@ async def submit_url(
     selectors: list[str] = Form(None),
     texts: list[str] = Form(None),
     options: list[str] = Form(None),
-    filenames: list[str] = Form(None),
     loop_counts: list[str] = Form(None)
 ):
     try:
         r.init(turbo_mode=True, headless_mode=False)
         r.url(url)
         action_messages = []
+        screenshots = []
 
-        def execute_action(action, selector, text, option, filename):
+        def execute_action(action, selector, text, option):
             if action == "url" and selector:
                 r.url(selector)
                 return f"Connected to URL: {selector}"
@@ -172,9 +170,11 @@ async def submit_url(
                 r.type(selector, text)
                 return f"Typed text into ID {selector}: {text}"
             elif action == "snap":
-                filename = filename or "screenshot.png"
-                r.wait(1)
-                r.snap('page', filename)
+                filename = f"screenshot_{uuid.uuid4().hex}.png"
+                file_path = os.path.join("screenshots", filename)
+                r.wait(0.5)
+                r.snap('page', file_path)
+                screenshots.append(file_path)
                 return f"Screenshot saved as {filename}"
             elif action == "select" and selector and option:
                 r.select(selector, option)
@@ -186,7 +186,6 @@ async def submit_url(
             selector = selectors[i] if i < len(selectors) else None
             text = texts[i] if i < len(texts) else None
             option = options[i] if i < len(options) else None
-            filename = filenames[i] if i < len(filenames) else None
             loop_count = int(loop_counts[i]) if i < len(loop_counts) and loop_counts[i].isdigit() else 1
 
             if action == "loop_times":
@@ -194,28 +193,28 @@ async def submit_url(
                 loop_selectors = []
                 loop_texts = []
                 loop_options = []
-                loop_filenames = []
                 i += 1
                 while i < len(actions) and actions[i] != "exit_loop":
                     loop_actions.append(actions[i])
                     loop_selectors.append(selectors[i] if i < len(selectors) else None)
                     loop_texts.append(texts[i] if i < len(texts) else None)
                     loop_options.append(options[i] if i < len(options) else None)
-                    loop_filenames.append(filenames[i] if i < len(filenames) else None)
                     i += 1
 
                 for _ in range(loop_count):
-                    for loop_action, loop_selector, loop_text, loop_option, loop_filename in zip(loop_actions, loop_selectors, loop_texts, loop_options, loop_filenames):
-                        result = execute_action(loop_action, loop_selector, loop_text, loop_option, loop_filename)
+                    for loop_action, loop_selector, loop_text, loop_option in zip(loop_actions, loop_selectors, loop_texts, loop_options):
+                        result = execute_action(loop_action, loop_selector, loop_text, loop_option)
                         if result:
                             action_messages.append(result)
 
                 action_messages.append(f"Executed loop {loop_count} times with actions: {', '.join(loop_actions)}")
             elif action != "exit_loop":
-                result = execute_action(action, selector, text, option, filename)
+                result = execute_action(action, selector, text, option)
                 if result:
                     action_messages.append(result)
             i += 1
+
+        screenshot_html = "".join(f'<img src="/screenshots/{os.path.basename(screenshot)}" alt="{screenshot}" style="max-width:100%"><br>' for screenshot in screenshots)
 
         html_content = f"""
         <html>
@@ -227,7 +226,8 @@ async def submit_url(
                 <p>You submitted the following URL: {url}</p>
                 {"".join(f"<p>{msg}</p>" for msg in action_messages if not msg.startswith('Executed loop'))}
                 <p>{', '.join([msg for msg in action_messages if msg.startswith('Executed loop')])}</p>
-                <a href="/">Perform another action</a>
+                <a href="/">Perform another action</a><br>
+                {screenshot_html}
             </body>
         </html>
         """
