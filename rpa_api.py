@@ -8,8 +8,10 @@ import uuid
 
 app = FastAPI()
 
+# Ensure the 'screenshots' directory exists
 os.makedirs('screenshots', exist_ok=True)
 
+# Serve the static files in the 'screenshots' directory
 app.mount("/screenshots", StaticFiles(directory="screenshots"), name="screenshots")
 
 @app.get("/", response_class=HTMLResponse)
@@ -22,6 +24,7 @@ async def read_root():
                 var loopCounter = 0;
                 var inLoop = false;
 
+                // Function to add an action to the form
                 function addAction(indentLevel = 0) {
                     var actionDiv = document.createElement('div');
                     actionDiv.classList.add('action-group');
@@ -67,6 +70,7 @@ async def read_root():
                     document.getElementById('actionsContainer').appendChild(actionDiv);
                 }
 
+                // Function to show/hide input fields based on selected action
                 function toggleSelectorInput(selectElement, indentLevel) {
                     var action = selectElement.value;
                     var selectorInput = selectElement.parentElement.querySelector('.selectorInput');
@@ -76,6 +80,7 @@ async def read_root():
                     var excelInput = selectElement.parentElement.querySelector('.excelInput');
                     var loopInput = selectElement.parentElement.querySelector('.loopInput');
 
+                    // Show or hide input fields based on the selected action
                     if (action === 'url' || action === 'click' || action === 'read' || action === 'type' || action === 'select') {
                         selectorInput.style.display = 'block';
                         excelInput.style.display = 'none';
@@ -138,6 +143,7 @@ async def read_root():
                     }
                 }
 
+                // Function to handle Excel file upload
                 function uploadExcelFile(input) {
                     var file = input.files[0];
                     var formData = new FormData();
@@ -157,6 +163,7 @@ async def read_root():
                     });
                 }
 
+                // Add initial action on page load
                 window.onload = function() {
                     addAction();
                     document.getElementById('submitBtn').style.display = 'none';
@@ -165,7 +172,7 @@ async def read_root():
         </head>
         <body>
             <h1>Welcome to Simple FastAPI Application</h1>
-            <p>This is simplified process planner.</p>
+            <p>This is a simplified process planner for your RPA.</p>
             <form action="/result" method="post" enctype="multipart/form-data">
                 <div id="actionsContainer"></div>
                 <button type="submit" id="submitBtn">Submit</button>
@@ -175,6 +182,7 @@ async def read_root():
     """
     return HTMLResponse(content=html_content)
 
+# Endpoint to handle Excel file upload and return row and column data
 @app.post("/upload_excel")
 async def upload_excel(file: UploadFile = File(...)):
     try:
@@ -185,6 +193,7 @@ async def upload_excel(file: UploadFile = File(...)):
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
 
+# Endpoint to handle form submission and execute actions
 @app.post("/result", response_class=HTMLResponse)
 async def submit_url(
     actions: list[str] = Form(...),
@@ -199,6 +208,7 @@ async def submit_url(
         action_messages = []
         screenshots = []
 
+        # Function to execute individual actions
         def execute_action(action, selector, text, option, file):
             if action == "url" and selector:
                 r.url(selector)
@@ -238,6 +248,7 @@ async def submit_url(
             file = excel_files[i] if i < len(excel_files) else None
             loop_count = int(loop_counts[i]) if i < len(loop_counts) and loop_counts[i].isdigit() else 1
 
+            # Handle looping actions
             if action == "loop_times":
                 loop_actions = []
                 loop_selectors = []
@@ -266,6 +277,7 @@ async def submit_url(
                     action_messages.append(result)
             i += 1
 
+        # Generate HTML content for the result page
         screenshot_html = "".join(f'<img src="/screenshots/{os.path.basename(screenshot)}" alt="{screenshot}" style="max-width:100%"><br>' for screenshot in screenshots)
 
         html_content = f"""
