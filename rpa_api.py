@@ -44,7 +44,7 @@ async def read_root():
                             <option value="snap">Snap Screenshot</option>
                             <option value="select">Select from Dropdown</option>
                             <option value="load_file">Load Data from File</option>
-                            <option value="write">Append to File</option>
+                            <option value="write">Write to File</option>
                             <option value="loop">Start Loop</option>
                             <option value="loop_times">Loop Amount</option>
                             <option value="exit_loop">End Loop</option>
@@ -63,9 +63,9 @@ async def read_root():
                             </div>
                         </div>
                         <div class="writeInput" style="display: none;">
-                            <label for="write_text">Enter the text to append:</label>
+                            <label for="write_text">Enter the text to write:</label>
                             <input type="text" class="write_text" name="write_texts"><br><br>
-                            <label for="file_name">Enter the file name to append to (optional):</label>
+                            <label for="file_name">Enter the file name to write to (optional) (use the same name as uploaded file to append):</label>
                             <input type="text" class="file_name" name="file_names"><br><br>
                         </div>
                         <div class="fileInput" style="display: none;">
@@ -215,6 +215,8 @@ async def read_root():
 async def load_file(file: UploadFile = File(...)):
     try:
         content = file.file.read().decode('utf-8')
+        dump_path = f"written_files/{file.filename}"
+        r.dump(content, dump_path)
         return JSONResponse(content={"content": content})
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
@@ -278,7 +280,7 @@ async def submit_url(
                     file_path = os.path.join("written_files", file_name)
                 else:
                     file_path = f"written_files/written_{uuid.uuid4().hex}.txt"
-                r.write(file_path, write_text)
+                r.write(write_text, file_path)
                 written_files.append(file_path)
                 return f"Appended text to file: {file_path}"
 
