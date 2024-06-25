@@ -37,6 +37,7 @@ async def read_root():
                             <option value="click">Click on Button</option>
                             <option value="rclick">Right Click an Element</option>
                             <option value="dclick">Double Click an Element</option>
+                            <option value="hover">Hover over Element</option>
                             <option value="read">Read Text from Element</option>
                             <option value="type">Type into Input Field</option>
                             <option value="snap">Snap Screenshot</option>
@@ -83,7 +84,7 @@ async def read_root():
                     var loopInput = selectElement.parentElement.querySelector('.loopInput');
 
                     // Show or hide input fields based on the selected action
-                    if (action === 'url' || action === 'click' || action === 'rclick' || action === 'dclick' || action === 'read' || action === 'type' || action === 'select') {
+                    if (action === 'url' || action === 'click' || action === 'rclick' || action === 'dclick' || action === 'hover' || action === 'read' || action === 'type' || action === 'select') {
                         selectorInput.style.display = 'block';
                         excelInput.style.display = 'none';
                         loopInput.style.display = 'none';
@@ -224,6 +225,9 @@ async def submit_url(
             elif action == "dclick" and selector:
                 r.dclick(selector)
                 return f"Double-clicked on element ID: {selector}"
+            elif action == "hover" and selector:
+                r.hover(selector)
+                return f"Hovered over element ID: {selector}"
             elif action == "read" and selector:
                 read_text = r.read(selector)
                 return f"Read text from ID {selector}: {read_text}"
