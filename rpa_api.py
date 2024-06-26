@@ -73,6 +73,7 @@ async def read_root():
                             <option value="load_file">Load Data from File</option>
                             <option value="write">Write to File</option>
                             <option value="ask">Ask for Input Prompt</option>
+                            <option value="keyboard">Keyboard Input</option>
                             <option value="send_email">Send an Email</option>
                             <option value="loop">Start Loop</option>
                             <option value="loop_times">Loop Amount</option>
@@ -100,6 +101,10 @@ async def read_root():
                         <div class="askInput" style="display: none;">
                             <label for="ask_text">Enter the question to ask:</label>
                             <input type="text" class="ask_text" name="ask_texts"><br><br>
+                        </div>
+                        <div class="keyboardInput" style="display: none;">
+                            <label for="keyboard_input">Enter the keyboard combination:</label>
+                            <input type="text" class="keyboard_input" name="keyboard_inputs"><br><br>
                         </div>
                         <div class="emailInput" style="display: none;">
                             <label for="gmail_id">Enter your Gmail ID:</label>
@@ -134,6 +139,7 @@ async def read_root():
                     var selectInput = selectElement.parentElement.querySelector('.selectInput');
                     var writeInput = selectElement.parentElement.querySelector('.writeInput');
                     var askInput = selectElement.parentElement.querySelector('.askInput');
+                    var keyboardInput = selectElement.parentElement.querySelector('.keyboardInput');
                     var emailInput = selectElement.parentElement.querySelector('.emailInput');
                     var fileInput = selectElement.parentElement.querySelector('.fileInput');
                     var loopInput = selectElement.parentElement.querySelector('.loopInput');
@@ -144,6 +150,7 @@ async def read_root():
                         fileInput.style.display = 'none';
                         writeInput.style.display = 'none';
                         askInput.style.display = 'none';
+                        keyboardInput.style.display = 'none';
                         emailInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         if (action === 'url') {
@@ -167,6 +174,7 @@ async def read_root():
                         fileInput.style.display = 'none';
                         writeInput.style.display = 'none';
                         askInput.style.display = 'none';
+                        keyboardInput.style.display = 'none';
                         emailInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         addAction(indentLevel);
@@ -175,6 +183,7 @@ async def read_root():
                         writeInput.style.display = 'block';
                         fileInput.style.display = 'none';
                         askInput.style.display = 'none';
+                        keyboardInput.style.display = 'none';
                         emailInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         addAction(indentLevel);
@@ -183,6 +192,16 @@ async def read_root():
                         writeInput.style.display = 'none';
                         fileInput.style.display = 'none';
                         askInput.style.display = 'block';
+                        keyboardInput.style.display = 'none';
+                        emailInput.style.display = 'none';
+                        loopInput.style.display = 'none';
+                        addAction(indentLevel);
+                    } else if (action === 'keyboard') {
+                        selectorInput.style.display = 'none';
+                        writeInput.style.display = 'none';
+                        fileInput.style.display = 'none';
+                        askInput.style.display = 'none';
+                        keyboardInput.style.display = 'block';
                         emailInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         addAction(indentLevel);
@@ -191,6 +210,7 @@ async def read_root():
                         writeInput.style.display = 'none';
                         fileInput.style.display = 'none';
                         askInput.style.display = 'none';
+                        keyboardInput.style.display = 'none';
                         emailInput.style.display = 'block';
                         loopInput.style.display = 'none';
                         addAction(indentLevel);
@@ -199,6 +219,7 @@ async def read_root():
                         fileInput.style.display = 'block';
                         writeInput.style.display = 'none';
                         askInput.style.display = 'none';
+                        keyboardInput.style.display = 'none';
                         emailInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         addAction(indentLevel);
@@ -207,6 +228,7 @@ async def read_root():
                         fileInput.style.display = 'none';
                         writeInput.style.display = 'none';
                         askInput.style.display = 'none';
+                        keyboardInput.style.display = 'none';
                         emailInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         inLoop = true;
@@ -217,6 +239,7 @@ async def read_root():
                         fileInput.style.display = 'none';
                         writeInput.style.display = 'none';
                         askInput.style.display = 'none';
+                        keyboardInput.style.display = 'none';
                         emailInput.style.display = 'none';
                         loopInput.style.display = 'block';
                         addAction(indentLevel);
@@ -225,6 +248,7 @@ async def read_root():
                         fileInput.style.display = 'none';
                         writeInput.style.display = 'none';
                         askInput.style.display = 'none';
+                        keyboardInput.style.display = 'none';
                         emailInput.style.display = 'none';
                         loopInput.style.display = 'none';
                         inLoop = false;
@@ -241,6 +265,7 @@ async def read_root():
                         fileInput.style.display = 'none';
                         writeInput.style.display = 'none';
                         askInput.style.display = 'none';
+                        keyboardInput.style.display = 'none';
                         emailInput.style.display = 'none';
                         loopInput.style.display = 'none';
                     }
@@ -313,19 +338,20 @@ async def submit_url(
     email_message: list[str] = Form(None),
     gmail_id: list[str] = Form(None),
     gmail_pwd: list[str] = Form(None),
+    keyboard_inputs: list[str] = Form(None),
     loop_counts: list[str] = Form(None),
     load_files: list[UploadFile] = Form(None),
     write_texts: list[str] = Form(None),
     file_names: list[str] = Form(None)
 ):
     try:
-        r.init(turbo_mode=True, headless_mode=False)
+        r.init(turbo_mode=True, headless_mode=False, visual_automation=True)
         action_messages = []
         screenshots = []
         written_files = []
 
         # Function to execute individual actions
-        def execute_action(action, selector, text, option, ask_text, email, email_sub, email_msg, gmail_id, gmail_pwd, file, write_text, file_name):
+        def execute_action(action, selector, text, option, ask_text, email, email_sub, email_msg, gmail_id, gmail_pwd, keyboard_input, file, write_text, file_name):
             if action == "url" and selector:
                 r.url(selector)
                 return f"Connected to URL: {selector}"
@@ -350,7 +376,7 @@ async def submit_url(
             elif action == "snap":
                 filename = f"screenshot_{uuid.uuid4().hex}.png"
                 file_path = os.path.join("screenshots", filename)
-                r.wait(0.5)
+                r.wait(0.7)
                 r.snap('page', file_path)
                 screenshots.append(file_path)
                 return f"Screenshot saved as {filename}"
@@ -360,6 +386,9 @@ async def submit_url(
             elif action == "ask" and ask_text:
                 user_response = r.ask(ask_text)
                 return f"User input for question '{ask_text}': {user_response}"
+            elif action == "keyboard" and keyboard_input:
+                r.keyboard(keyboard_input)
+                return f"Executed keyboard input: {keyboard_input}"
             elif action == "send_email" and email and email_sub and gmail_id and gmail_pwd:
                 if not email_msg:
                     email_msg = f"""
@@ -401,6 +430,7 @@ async def submit_url(
             email_msg = email_message[i] if i < len(email_message) else None
             gmail_id_ = gmail_id[i] if i < len(gmail_id) else None
             gmail_pwd_ = gmail_pwd[i] if i < len(gmail_pwd) else None
+            keyboard_input = keyboard_inputs[i] if i < len(keyboard_inputs) else None
             file = load_files[i] if i < len(load_files) else None
             write_text = write_texts[i] if i < len(write_texts) else None
             file_name = file_names[i] if i < len(file_names) else None
@@ -418,6 +448,7 @@ async def submit_url(
                 loop_email_message = []
                 loop_gmail_id = []
                 loop_gmail_pwd = []
+                loop_keyboard_inputs = []
                 loop_files = []
                 loop_write_texts = []
                 loop_file_names = []
@@ -433,20 +464,21 @@ async def submit_url(
                     loop_email_message.append(email_message[i] if i < len(email_message) else None)
                     loop_gmail_id.append(gmail_id[i] if i < len(gmail_id) else None)
                     loop_gmail_pwd.append(gmail_pwd[i] if i < len(gmail_pwd) else None)
+                    loop_keyboard_inputs.append(keyboard_inputs[i] if i < len(keyboard_inputs) else None)
                     loop_files.append(load_files[i] if i < len(load_files) else None)
                     loop_write_texts.append(write_texts[i] if i < len(write_texts) else None)
                     loop_file_names.append(file_names[i] if i < len(file_names) else None)
                     i += 1
 
                 for _ in range(loop_count):
-                    for loop_action, loop_selector, loop_text, loop_option, loop_ask_text, loop_email, loop_email_sub, loop_email_msg, loop_gmail_id, loop_gmail_pwd, loop_file, loop_write_text, loop_file_name in zip(loop_actions, loop_selectors, loop_texts, loop_options, loop_ask_texts, loop_email_to, loop_email_subject, loop_email_message, loop_gmail_id, loop_gmail_pwd, loop_files, loop_write_texts, loop_file_names):
-                        result = execute_action(loop_action, loop_selector, loop_text, loop_option, loop_ask_text, loop_email, loop_email_sub, loop_email_msg, loop_gmail_id, loop_gmail_pwd, loop_file, loop_write_text, loop_file_name)
+                    for loop_action, loop_selector, loop_text, loop_option, loop_ask_text, loop_email, loop_email_sub, loop_email_msg, loop_gmail_id, loop_gmail_pwd, loop_keyboard_input, loop_file, loop_write_text, loop_file_name in zip(loop_actions, loop_selectors, loop_texts, loop_options, loop_ask_texts, loop_email_to, loop_email_subject, loop_email_message, loop_gmail_id, loop_gmail_pwd, loop_keyboard_inputs, loop_files, loop_write_texts, loop_file_names):
+                        result = execute_action(loop_action, loop_selector, loop_text, loop_option, loop_ask_text, loop_email, loop_email_sub, loop_email_msg, loop_gmail_id, loop_gmail_pwd, loop_keyboard_input, loop_file, loop_write_text, loop_file_name)
                         if result:
                             action_messages.append(result)
 
                 action_messages.append(f"Executed loop {loop_count} times with actions: {', '.join(loop_actions)}")
             elif action != "exit_loop":
-                result = execute_action(action, selector, text, option, ask_text, email, email_sub, email_msg, gmail_id_, gmail_pwd_, file, write_text, file_name)
+                result = execute_action(action, selector, text, option, ask_text, email, email_sub, email_msg, gmail_id_, gmail_pwd_, keyboard_input, file, write_text, file_name)
                 if result:
                     action_messages.append(result)
             i += 1
