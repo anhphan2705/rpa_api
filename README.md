@@ -40,7 +40,7 @@ This project provides a simple and intuitive web-based UI to design and execute 
 - **Ask for Input:** Ask the user for input during the execution.
 - **Keyboard Input:** Simulate keyboard input.
 - **Send an Email:** Send an email with the result log, including attachments.
-- **Start Loop:** Start a loop to repeat actions.
+- **Start Loop:** Start a loop to repeat actions. Default looping 1 time without Loop Amount action.
 - **Loop Amount:** Specify the number of times to loop actions.
 - **End Loop:** End the loop.
 - **Done:** Indicate the end of actions.
