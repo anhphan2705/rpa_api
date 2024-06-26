@@ -5,6 +5,10 @@ import os
 import rpa as r
 import uuid
 import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 
 app = FastAPI()
 
@@ -16,11 +20,28 @@ os.makedirs('written_files', exist_ok=True)
 app.mount("/screenshots", StaticFiles(directory="screenshots"), name="screenshots")
 app.mount("/written_files", StaticFiles(directory="written_files"), name="written_files")
 
-def send_email_with_cred(gmail_id, gmail_pwd, to, sub, msg):
+def send_email_with_cred(gmail_id, gmail_pwd, to, sub, msg, images):
+    message = MIMEMultipart()
+    message['From'] = gmail_id
+    message['To'] = to
+    message['Subject'] = sub
+    
+    message.attach(MIMEText(msg, 'html'))
+
+    for image_path in images:
+        with open(image_path, 'rb') as img:
+            mime = MIMEBase('image', 'png', filename=os.path.basename(image_path))
+            mime.add_header('Content-Disposition', 'attachment', filename=os.path.basename(image_path))
+            mime.add_header('X-Attachment-Id', '0')
+            mime.add_header('Content-ID', '<0>')
+            mime.set_payload(img.read())
+            encoders.encode_base64(mime)
+            message.attach(mime)
+
     gmail_obj = smtplib.SMTP('smtp.gmail.com', 587)
     gmail_obj.starttls()
     gmail_obj.login(gmail_id, gmail_pwd)
-    gmail_obj.sendmail(gmail_id, to, f"Subject: {sub}\n\n{msg}")
+    gmail_obj.sendmail(gmail_id, to, message.as_string())
     gmail_obj.quit()
 
 @app.get("/", response_class=HTMLResponse)
@@ -305,6 +326,10 @@ async def submit_url(
         screenshots = []
         written_files = []
 
+        # Generate HTML content for the result page
+        screenshot_html = "".join(f'<img src="/screenshots/{os.path.basename(screenshot)}" alt="{screenshot}" style="max-width:100%"><br>' for screenshot in screenshots)
+        written_files_html = "".join(f'<a href="/written_files/{os.path.basename(written_file)}" download>{os.path.basename(written_file)}</a><br>' for written_file in written_files)
+
         # Function to execute individual actions
         def execute_action(action, selector, text, option, ask_text, email, email_sub, email_msg, gmail_id, gmail_pwd, file, write_text, file_name):
             if action == "url" and selector:
@@ -343,10 +368,20 @@ async def submit_url(
                 return f"User input for question '{ask_text}': {user_response}"
             elif action == "send_email" and email and email_sub and gmail_id and gmail_pwd:
                 if not email_msg:
-                    email_msg = '\n'.join(action_messages) + '\n' + ''.join(
-                        f'\nScreenshot: {os.path.basename(screenshot)}' for screenshot in screenshots) + '\n' + ''.join(
-                        f'\nFile: {os.path.basename(file_path)}' for file_path in written_files)
-                send_email_with_cred(gmail_id, gmail_pwd, email, email_sub, email_msg)
+                    email_msg = f"""
+                    <html>
+                        <head></head>
+                        <body>
+                            <h1>Actions Executed</h1>
+                            {"".join(f"<p>{msg}</p>" for msg in action_messages if not msg.startswith('Executed loop'))}
+                            <p>{', '.join([msg for msg in action_messages if msg.startswith('Executed loop')])}</p>
+                            {screenshot_html}
+                            {"<h2>Files Available for Download</h2>" if written_files_html else ""}
+                            {written_files_html}
+                        </body>
+                    </html>
+                    """
+                send_email_with_cred(gmail_id, gmail_pwd, email, email_sub, email_msg, screenshots)
                 return f"Sent email to {email} with subject {email_sub}"
             elif action == "load_file" and file:
                 content = file.file.read().decode('utf-8')
@@ -421,10 +456,6 @@ async def submit_url(
                 if result:
                     action_messages.append(result)
             i += 1
-
-        # Generate HTML content for the result page
-        screenshot_html = "".join(f'<img src="/screenshots/{os.path.basename(screenshot)}" alt="{screenshot}" style="max-width:100%"><br>' for screenshot in screenshots)
-        written_files_html = "".join(f'<a href="/written_files/{os.path.basename(written_file)}" download>{os.path.basename(written_file)}</a><br>' for written_file in written_files)
 
         html_content = f"""
         <html>
