@@ -33,6 +33,8 @@ This project provides a simple and intuitive web-based UI to design and execute 
 - **Load Data from File:** Load data from an uploaded file.
 - **Write to File:** Write text to a file. If the file already uploaded before, it appends the text.
 - **Ask for Input:** Ask the user for input during the execution.
+- **Keyboard Input:** Simulate keyboard input.
+- **Send an Email:** Send an email with the result log, including attachments.
 - **Start Loop:** Start a loop to repeat actions.
 - **Loop Amount:** Specify the number of times to loop actions.
 - **End Loop:** End the loop.
@@ -64,7 +66,7 @@ This project provides a simple and intuitive web-based UI to design and execute 
 3. **Install the required packages:**
 
     ```bash
-    pip install fastapi uvicorn rpa os uuid
+    pip install fastapi uvicorn rpa
     ```
 
 ## Usage
@@ -123,6 +125,12 @@ Handles form submissions and executes the specified actions in sequence.
 - `texts`: List of texts to type (optional).
 - `options`: List of options to select (optional).
 - `ask_texts`: List of questions to ask for user input (optional).
+- `keyboard_inputs`: List of keyboard inputs to simulate (optional).
+- `email_to`: List of recipient email addresses (optional).
+- `email_subject`: List of email subjects (optional).
+- `email_message`: List of email messages (optional).
+- `gmail_id`: List of Gmail IDs (optional).
+- `gmail_pwd`: List of Gmail passwords (optional).
 - `loop_counts`: List of loop counts (optional).
 - `load_files`: List of files to load data from (optional).
 - `write_texts`: List of texts to write (optional).

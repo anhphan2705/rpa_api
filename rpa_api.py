@@ -108,11 +108,11 @@ async def read_root():
                         </div>
                         <div class="emailInput" style="display: none;">
                             <label for="gmail_id">Enter your Gmail ID:</label>
-                            <input type="text" class="gmail_id" name="gmail_id"><br><br>
+                            <input type="text" class="gmail_id" name="gmail_id" required><br><br>
                             <label for="gmail_pwd">Enter your Gmail App Password:</label>
-                            <input type="password" class="gmail_pwd" name="gmail_pwd"><br><br>
+                            <input type="password" class="gmail_pwd" name="gmail_pwd" required><br><br>
                             <label for="email_to">Enter the recipient email:</label>
-                            <input type="text" class="email_to" name="email_to"><br><br>
+                            <input type="text" class="email_to" name="email_to" required><br><br>
                             <label for="email_subject">Enter the email subject:</label>
                             <input type="text" class="email_subject" name="email_subject"><br><br>
                             <label for="email_message">Enter the email message (leave blank to send result log):</label>
@@ -333,11 +333,11 @@ async def submit_url(
     texts: list[str] = Form(None),
     options: list[str] = Form(None),
     ask_texts: list[str] = Form(None),
-    email_to: list[str] = Form(None),
+    email_to: list[str] = Form(...),
     email_subject: list[str] = Form(None),
     email_message: list[str] = Form(None),
-    gmail_id: list[str] = Form(None),
-    gmail_pwd: list[str] = Form(None),
+    gmail_id: list[str] = Form(...),
+    gmail_pwd: list[str] = Form(...),
     keyboard_inputs: list[str] = Form(None),
     loop_counts: list[str] = Form(None),
     load_files: list[UploadFile] = Form(None),
