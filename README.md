@@ -83,6 +83,10 @@ This project provides a simple and intuitive web-based UI to design and execute 
 
     - Select actions from the dropdown menu.
     - Fill in the required details for each action.
+    - For element signature, it is recommended to input under this format
+      ```bash
+      //element_type[@identifier="element_name"]
+      ```
     - Add more actions as needed.
 
 4. **Submit the workflow:**
