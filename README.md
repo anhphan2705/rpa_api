@@ -5,7 +5,7 @@
 This project provides a simple and intuitive web-based UI to design and execute RPA (Robotic Process Automation) tasks using FastAPI. Users can create workflows by selecting various actions such as connecting to a URL, clicking buttons, typing text, and more. The actions are executed sequentially, and the results are displayed on the same page.
 
 <div align="center">
-    <img src="./bin/simple-rpa-ui.png" alt="Simple RPA UI" width="75%">
+    <img src="./bin/simple-rpa-ui.png" alt="Simple RPA UI" width="50%">
 </div>
 
 ## Table of Contents
