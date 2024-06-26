@@ -10,6 +10,7 @@ This project provides a simple and intuitive web-based UI to design and execute 
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Finding Element Identifiers](#finding-element-identifiers)
 - [API Endpoints](#api-endpoints)
   - [GET /](#get-)
   - [POST /load_file](#post-load_file)
@@ -66,7 +67,7 @@ This project provides a simple and intuitive web-based UI to design and execute 
 3. **Install the required packages:**
 
     ```bash
-    pip install fastapi uvicorn rpa
+    pip install fastapi uvicorn rpa smtplib uuid
     ```
 
 ## Usage
@@ -85,16 +86,49 @@ This project provides a simple and intuitive web-based UI to design and execute 
 
     - Select actions from the dropdown menu.
     - Fill in the required details for each action.
-    - For element signature, it is recommended to input under this format
-      ```bash
-      //element_type[@identifier="element_name"]
-      ```
+    - For how to find element signature, refer to [Finding Element Identifiers](#finding-element-identifiers) for more information
     - Add more actions as needed.
 
 4. **Submit the workflow:**
 
     - Click the "Submit" button to execute the workflow.
     - The results, including screenshots and written files, will be displayed on the results page.
+
+## Finding Element Identifiers
+
+To perform actions on specific elements on a web page, you need to provide the correct element identifier (XPath). Here's how to find the XPath of an element:
+
+1. **Open the web page in Chrome.**
+2. **Right-click on the element you want to interact with and select `Inspect` to open the Developer Tools.**
+3. **In the Developer Tools pane, right-click on the highlighted element in the HTML structure and select `Copy` -> `Copy XPath`.**
+
+The copied XPath will look something like this:
+
+```xpath
+/html/body/div[1]/header/div/nav/ul/li[1]/a
+```
+
+You can simplify the XPath if needed. For example, if the element has a unique ID, you can use:
+
+```xpath
+//element_type[@id="element_id"]
+```
+
+Or, if the element has a unique class:
+
+```xpath
+//element_type[@class="element_class"]
+```
+
+### Example
+
+For a button with the ID `submit-button`, the XPath would be:
+
+```xpath
+//button[@id="submit-button"]
+```
+
+Use these XPaths in the `selectors` field when creating your workflow actions.
 
 ## API Endpoints
 
@@ -126,11 +160,11 @@ Handles form submissions and executes the specified actions in sequence.
 - `options`: List of options to select (optional).
 - `ask_texts`: List of questions to ask for user input (optional).
 - `keyboard_inputs`: List of keyboard inputs to simulate (optional).
-- `email_to`: List of recipient email addresses (optional).
+- `email_to`: List of recipient email addresses (required).
 - `email_subject`: List of email subjects (optional).
 - `email_message`: List of email messages (optional).
-- `gmail_id`: List of Gmail IDs (optional).
-- `gmail_pwd`: List of Gmail passwords (optional).
+- `gmail_id`: List of Gmail IDs (required).
+- `gmail_pwd`: List of Gmail passwords (required).
 - `loop_counts`: List of loop counts (optional).
 - `load_files`: List of files to load data from (optional).
 - `write_texts`: List of texts to write (optional).
