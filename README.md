@@ -185,6 +185,7 @@ Handles form submissions and executes the specified actions in sequence.
 
 ```
 .
+├── bin/                    # Directory to store images for README
 ├── main.py                 # Main FastAPI application
 ├── screenshots/            # Directory to store screenshots
 ├── written_files/          # Directory to store written files
