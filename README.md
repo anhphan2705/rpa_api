@@ -4,6 +4,8 @@
 
 This project provides a simple and intuitive web-based UI to design and execute RPA (Robotic Process Automation) tasks using FastAPI. Users can create workflows by selecting various actions such as connecting to a URL, clicking buttons, typing text, and more. The actions are executed sequentially, and the results are displayed on the same page.
 
+![Simple RPA UI](./bin/simple-rpa-ui.png)
+
 ## Table of Contents
 
 - [Features](#features)
@@ -129,6 +131,8 @@ For a button with the ID `submit-button`, the XPath would be:
 ```
 
 Use these XPaths in the `selectors` field when creating your workflow actions.
+
+![Finding Element Identifiers](./bin/find-element-identifiers.png)
 
 ## API Endpoints
 
