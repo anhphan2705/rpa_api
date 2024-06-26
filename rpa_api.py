@@ -20,7 +20,7 @@ os.makedirs('written_files', exist_ok=True)
 app.mount("/screenshots", StaticFiles(directory="screenshots"), name="screenshots")
 app.mount("/written_files", StaticFiles(directory="written_files"), name="written_files")
 
-def send_email_with_cred(gmail_id, gmail_pwd, to, sub, msg, images):
+def send_email_with_cred(gmail_id, gmail_pwd, to, sub, msg, attachments):
     message = MIMEMultipart()
     message['From'] = gmail_id
     message['To'] = to
@@ -28,14 +28,12 @@ def send_email_with_cred(gmail_id, gmail_pwd, to, sub, msg, images):
     
     message.attach(MIMEText(msg, 'html'))
 
-    for image_path in images:
-        with open(image_path, 'rb') as img:
-            mime = MIMEBase('image', 'png', filename=os.path.basename(image_path))
-            mime.add_header('Content-Disposition', 'attachment', filename=os.path.basename(image_path))
-            mime.add_header('X-Attachment-Id', '0')
-            mime.add_header('Content-ID', '<0>')
-            mime.set_payload(img.read())
+    for attachment_path in attachments:
+        with open(attachment_path, 'rb') as attachment:
+            mime = MIMEBase('application', 'octet-stream')
+            mime.set_payload(attachment.read())
             encoders.encode_base64(mime)
+            mime.add_header('Content-Disposition', f'attachment; filename="{os.path.basename(attachment_path)}"')
             message.attach(mime)
 
     gmail_obj = smtplib.SMTP('smtp.gmail.com', 587)
@@ -326,10 +324,6 @@ async def submit_url(
         screenshots = []
         written_files = []
 
-        # Generate HTML content for the result page
-        screenshot_html = "".join(f'<img src="/screenshots/{os.path.basename(screenshot)}" alt="{screenshot}" style="max-width:100%"><br>' for screenshot in screenshots)
-        written_files_html = "".join(f'<a href="/written_files/{os.path.basename(written_file)}" download>{os.path.basename(written_file)}</a><br>' for written_file in written_files)
-
         # Function to execute individual actions
         def execute_action(action, selector, text, option, ask_text, email, email_sub, email_msg, gmail_id, gmail_pwd, file, write_text, file_name):
             if action == "url" and selector:
@@ -375,13 +369,13 @@ async def submit_url(
                             <h1>Actions Executed</h1>
                             {"".join(f"<p>{msg}</p>" for msg in action_messages if not msg.startswith('Executed loop'))}
                             <p>{', '.join([msg for msg in action_messages if msg.startswith('Executed loop')])}</p>
-                            {screenshot_html}
-                            {"<h2>Files Available for Download</h2>" if written_files_html else ""}
-                            {written_files_html}
+                            {"".join(f'<img src="/screenshots/{os.path.basename(screenshot)}" alt="{screenshot}" style="max-width:100%"><br>' for screenshot in screenshots)}
+                            {"<h2>Files Available for Download</h2>" if written_files else ""}
+                            {"".join(f'<a href="/written_files/{os.path.basename(written_file)}" download>{os.path.basename(written_file)}</a><br>' for written_file in written_files)}
                         </body>
                     </html>
                     """
-                send_email_with_cred(gmail_id, gmail_pwd, email, email_sub, email_msg, screenshots)
+                send_email_with_cred(gmail_id, gmail_pwd, email, email_sub, email_msg, screenshots + written_files)
                 return f"Sent email to {email} with subject {email_sub}"
             elif action == "load_file" and file:
                 content = file.file.read().decode('utf-8')
@@ -456,6 +450,10 @@ async def submit_url(
                 if result:
                     action_messages.append(result)
             i += 1
+
+        # Generate HTML content for the result page
+        screenshot_html = "".join(f'<img src="/screenshots/{os.path.basename(screenshot)}" alt="{screenshot}" style="max-width:100%"><br>' for screenshot in screenshots)
+        written_files_html = "".join(f'<a href="/written_files/{os.path.basename(written_file)}" download>{os.path.basename(written_file)}</a><br>' for written_file in written_files)
 
         html_content = f"""
         <html>
