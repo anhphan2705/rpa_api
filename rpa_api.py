@@ -17,10 +17,10 @@ app.mount("/screenshots", StaticFiles(directory="screenshots"), name="screenshot
 app.mount("/written_files", StaticFiles(directory="written_files"), name="written_files")
 
 def send_email_with_cred(gmail_id, gmail_pwd, to, sub, msg):
-    gmail_obj = smtplib.SMTP('smtp.gmail.com', 587) 
-    gmail_obj.starttls()     
-    gmail_obj.login(gmail_id, gmail_pwd)   
-    gmail_obj.sendmail(gmail_id, to, f"Subject : {sub}\n\n{msg}") 
+    gmail_obj = smtplib.SMTP('smtp.gmail.com', 587)
+    gmail_obj.starttls()
+    gmail_obj.login(gmail_id, gmail_pwd)
+    gmail_obj.sendmail(gmail_id, to, f"Subject: {sub}\n\n{msg}")
     gmail_obj.quit()
 
 @app.get("/", response_class=HTMLResponse)
@@ -91,7 +91,7 @@ async def read_root():
                             <input type="text" class="email_to" name="email_to"><br><br>
                             <label for="email_subject">Enter the email subject:</label>
                             <input type="text" class="email_subject" name="email_subject"><br><br>
-                            <label for="email_message">Enter the email message:</label>
+                            <label for="email_message">Enter the email message (leave blank to send result log):</label>
                             <textarea class="email_message" name="email_message"></textarea><br><br>
                         </div>
                         <div class="fileInput" style="display: none;">
@@ -341,7 +341,11 @@ async def submit_url(
             elif action == "ask" and ask_text:
                 user_response = r.ask(ask_text)
                 return f"User input for question '{ask_text}': {user_response}"
-            elif action == "send_email" and email and email_sub and email_msg and gmail_id and gmail_pwd:
+            elif action == "send_email" and email and email_sub and gmail_id and gmail_pwd:
+                if not email_msg:
+                    email_msg = '\n'.join(action_messages) + '\n' + ''.join(
+                        f'\nScreenshot: {os.path.basename(screenshot)}' for screenshot in screenshots) + '\n' + ''.join(
+                        f'\nFile: {os.path.basename(file_path)}' for file_path in written_files)
                 send_email_with_cred(gmail_id, gmail_pwd, email, email_sub, email_msg)
                 return f"Sent email to {email} with subject {email_sub}"
             elif action == "load_file" and file:
