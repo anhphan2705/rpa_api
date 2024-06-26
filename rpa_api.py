@@ -35,7 +35,7 @@ async def read_root():
                         <select class="action" name="actions" required onchange="toggleSelectorInput(this, ${indentLevel})">
                             <option value="">Select an action</option>
                             <option value="url">Connect to URL</option>
-                            <option value="click">Click on Button</option>
+                            <option value="click">Click on Element</option>
                             <option value="right_click">Right Click on Element</option>
                             <option value="double_click">Double Click on Element</option>
                             <option value="hover">Hover on Element</option>
@@ -45,7 +45,7 @@ async def read_root():
                             <option value="select">Select from Dropdown</option>
                             <option value="load_file">Load Data from File</option>
                             <option value="write">Write to File</option>
-                            <option value="ask">Ask for Input</option>
+                            <option value="ask">Ask for Input Prompt</option>
                             <option value="loop">Start Loop</option>
                             <option value="loop_times">Loop Amount</option>
                             <option value="exit_loop">End Loop</option>
