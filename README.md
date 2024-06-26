@@ -95,6 +95,7 @@ This project provides a simple and intuitive web-based UI to design and execute 
 
 4. **Submit the workflow:**
 
+    - Choose the option `Done!` when you are finish with the setup. Only them the submit button will appear.
     - Click the "Submit" button to execute the workflow.
     - The results, including screenshots and written files, will be displayed on the results page.
 
