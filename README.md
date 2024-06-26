@@ -31,7 +31,7 @@ This project provides a simple and intuitive web-based UI to design and execute 
 - **Snap Screenshot:** Capture a screenshot of the current page.
 - **Select from Dropdown:** Select an option from a dropdown menu.
 - **Load Data from File:** Load data from an uploaded file.
-- **Write to File:** Write text to a file. If the file already exists, it appends the text.
+- **Write to File:** Write text to a file. If the file already uploaded before, it appends the text.
 - **Ask for Input:** Ask the user for input during the execution.
 - **Start Loop:** Start a loop to repeat actions.
 - **Loop Amount:** Specify the number of times to loop actions.
