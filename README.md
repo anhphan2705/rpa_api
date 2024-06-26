@@ -126,13 +126,13 @@ Or, if the element has a unique class:
 
 ### Example
 
-For a button with the ID `submit-button`, the XPath would be:
+For a button with the ID `submitBtn`, the XPath would be:
 
 ```xpath
-//button[@id="submit-button"]
+//button[@id="submitBtn"]
 ```
 
-Use these XPaths in the `selectors` field when creating your workflow actions.
+Use these XPaths when asked for element identifiers during your workflow creation.
 
 ![Finding Element Identifiers](./bin/find-element-identifiers.png)
 
